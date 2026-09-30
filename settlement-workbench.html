@@ -3,16 +3,22 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <title>월 정산 워크벤치</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <style id="pageStyle">@page{size:A4;margin:14mm}</style>
 <style>
-:root{--bg:#f2f5f8;--panel:#fff;--ink:#1c2a35;--muted:#5f7282;--line:#dbe3ea;--brand:#0a67a0;--brand2:#0d4f7a;--soft:#e9f2f8;--ok:#1d8049;--okbg:#e4f3ea;--warn:#a86400;--warnbg:#fff3de;--err:#bf3526;--errbg:#fdeae8;--wk:#f7f9fb;--input:#fff}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111820;--panel:#18222c;--ink:#e3ebf1;--muted:#98abba;--line:#2c3a47;--brand:#4aa6dd;--brand2:#7cc0ea;--soft:#1d2e3c;--ok:#5cc98a;--okbg:#17301f;--warn:#f0b24f;--warnbg:#33280f;--err:#ff8a7a;--errbg:#3a1b17;--wk:#1c2731;--input:#101820}}
-:root[data-theme="dark"]{--bg:#111820;--panel:#18222c;--ink:#e3ebf1;--muted:#98abba;--line:#2c3a47;--brand:#4aa6dd;--brand2:#7cc0ea;--soft:#1d2e3c;--ok:#5cc98a;--okbg:#17301f;--warn:#f0b24f;--warnbg:#33280f;--err:#ff8a7a;--errbg:#3a1b17;--wk:#1c2731;--input:#101820}
+/* 매뉴얼·실행 센터와 같은 토큰 */
+:root{--bg:#f4f6f8;--panel:#ffffff;--ink:#1a2230;--muted:#5c6675;--line:#e1e5ea;--brand:#0f5c56;--brand2:#0a3f3b;--soft:#e3f1ee;--ok:#2f7d55;--okbg:#e6f2ea;--warn:#a5540d;--warnbg:#fbf1e4;--err:#a3311f;--errbg:#fbeeec;--wk:#eef1f4;--input:#ffffff;--mono:'IBM Plex Mono',ui-monospace,Consolas,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12161c;--panel:#181d25;--ink:#e7ebf0;--muted:#a3adba;--line:#2a313c;--brand:#4fc9bc;--brand2:#bdf0e7;--soft:#173330;--ok:#6fd4a0;--okbg:#16301f;--warn:#e3a765;--warnbg:#2e2415;--err:#e08674;--errbg:#2c1a17;--wk:#1f2530;--input:#12161c}}
+:root[data-theme="dark"]{--bg:#12161c;--panel:#181d25;--ink:#e7ebf0;--muted:#a3adba;--line:#2a313c;--brand:#4fc9bc;--brand2:#bdf0e7;--soft:#173330;--ok:#6fd4a0;--okbg:#16301f;--warn:#e3a765;--warnbg:#2e2415;--err:#e08674;--errbg:#2c1a17;--wk:#1f2530;--input:#12161c}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.6 "Pretendard","Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.6 'Noto Sans KR','IBM Plex Sans KR',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:'IBM Plex Sans KR','Noto Sans KR',sans-serif}
+code,kbd,samp,.mono{font-family:var(--mono)}
 button,input,select,textarea{font:inherit;color:inherit}
 a{color:var(--brand)}
 .top{position:sticky;top:0;z-index:10;display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:12px 20px;background:var(--panel);border-bottom:1px solid var(--line)}
