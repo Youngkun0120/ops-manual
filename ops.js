@@ -22,7 +22,14 @@
   };
 
   window.addEventListener('message', function (e) {
-    if (!e.data || e.data.type !== 'ops-model-height') return;
+    if (!e.data) return;
+    if (e.data.type === 'ops-scroll-top') {            /* 실행 센터의 「메인으로 가기」 */
+      var c = document.getElementById('content');
+      if (c) c.scrollTop = 0;
+      window.scrollTo(0, 0);
+      return;
+    }
+    if (e.data.type !== 'ops-model-height') return;
     var f = document.getElementById('opsFrame');
     if (f) f.style.height = Math.max(MIN_H, e.data.height + 24) + 'px';
   });
