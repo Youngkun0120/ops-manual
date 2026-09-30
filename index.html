@@ -139,6 +139,8 @@ button{font:inherit}
 .navlist a.home-link.active{background:var(--accent-soft);color:var(--accent-ink)}
 .navdivider{height:1px;background:var(--border);margin:14px 6px}
 .navgroup-label{font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-faint);padding:0 8px;margin:2px 0 4px;font-weight:600}
+.navgroup-dept{font-weight:400;letter-spacing:0;text-transform:none;margin-left:6px;opacity:.85}
+.navgoal-label{font-size:11px;font-weight:700;color:var(--ink);background:var(--surface-2,rgba(0,0,0,.04));border-radius:6px;padding:5px 8px;margin:16px 0 8px}
 
 /* ---------- Breadcrumb / page meta ---------- */
 .crumb{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-faint);margin-bottom:14px}
@@ -1014,22 +1016,18 @@ const MODULES = [
    ],
    contacts:[['담당','오버테이크 윤서현 팀장 &lt;sh.yoon@overtake.kr&gt; / 경영팀 &lt;management@oceanbleu.co.kr&gt;']]},
 
-  {type:'card', title:'제휴 정산 — JM · 더드리미 (RS) / 식단코치', sub:'오션블루 헬스케어',
-   fields:[['목적','JM·더드리미 RS 정산 및 식단코치 정산'],['시점','매월 첫 영업일 이후 / 매월 8일 전 발송'],['도구','헬스케어 데이터 관리 시트(W05·W13·W14), 오션 관리자, 별도 정산 시트'],['위치','오션 관리자 › 집계 관리 › 서비스 이용 데이터']],
+  {type:'card', title:'제휴 정산 — JM · 더드리미 (RS)', sub:'오션블루 헬스케어',
+   fields:[['목적','JM·더드리미 RS 정산'],['시점','매월 첫 영업일 이후 / 매월 8일 전 발송'],['도구','헬스케어 데이터 관리 시트(W05·W13·W14), 별도 정산 시트'],['위치','헬스케어 데이터 관리 시트']],
    sections:[
     {h:'수행 절차', steps:[
       '[JM·드리미] 매일 작성하는 데이터 시트(W05·W13·W14)의 가입 수·해지 수에 기반하여 일 누적 가입자 수가 자동 산출된다.',
       '자동 산출된 가입자 수 × 월별 일 정산액 = 정산 시트.',
       '경영팀에 메일을 발송하여 컨펌을 받는다(수신 management / 참조 하순봉 전무, 서비스기획).',
       '매월 8일 전 각 업체에 정산서를 발송하고 세금계산서 발행을 요청한다.<div class="sub">익월 정산 시트는 매월 첫 영업일에 업데이트 필요 · 공유용 파일은 PDF 형식으로 발송</div>',
-      '[식단코치] 오션 관리자 › 집계 관리 › 서비스 이용 데이터 › 조회 시작일/종료일 설정(1일~말일).'+L('https://adm.passhealthcare.com/voc/userSearch.do','오션 관리자'),
-      '기능: 식단코칭 선택 후 검색 → 엑셀 추출.',
-      '별도 정산 시트 양식에 맞춰 작성한다.',
-      '코치에게 메일로 공유한다.',
     ]},
     {h:'체크포인트', list:['일 누적 가입자 수 자동 산출값이 비어 있지 않은지(일일 집계 누락 시 값이 틀어짐)']},
    ],
-   contacts:[['식단코치','조대식 코치 &lt;ppo2569@naver.com&gt;'],['내부 컨펌','management / 하순봉 전무 / 서비스기획']],
+   contacts:[['내부 컨펌','management / 하순봉 전무 / 서비스기획']],
    tips:['일일 집계(M2)가 정확해야 이 정산이 자동으로 맞습니다 — 정산 오류의 원인은 대부분 일일 집계']},
 
   {type:'card', title:'제휴 정산 — 제이스퓨처 (whowho)', sub:'와이즈솔루션 마인드케어',
@@ -1100,6 +1098,35 @@ const MODULES = [
    ],
    contacts:[['담당','TO 재경팀 &lt;finance@wisesolutions.co.kr&gt; — 산출물: 상세내역서 xlsx + 증빙 zip']],
    tips:['여러 건의 금액을 한 칸에 넣을 때는 합계를 손으로 계산하지 말고 셀 안에서 수식으로 더할 것', '5일까지 수급되지 못한 내역은 이월하여 처리', '참고 — GCP 빌링, 환불 리스트, 환불내역 CHECKOUT'+L('https://docs.google.com/spreadsheets/d/1KLQkB1VdRgH-_s0u2ku9T2RBq9AOkT4gWpoadpKcan8/edit#gid=0','환불 리스트')]},
+
+  {type:'card', title:'식단코치 정산', sub:'오션블루 헬스케어 · 식단코칭',
+   fields:[['목적','식단코칭을 맡은 코치에게 월 인센티브 정산'],['시점','매월 초(전월 1일~말일 기준)'],['도구','오션 관리자, 인센티브 정산 파일(「2026 인센티브」), 메일, 정산 업무 탭(월 정산 워크벤치)'],['위치','오션 관리자 › 집계 관리 › 서비스 이용 데이터']],
+   sections:[
+    {h:'수행 절차', steps:[
+      '오션 관리자 › 집계 관리 › 서비스 이용 데이터 › 조회 시작일/종료일을 전월 1일~말일로 설정한다.'+L('https://adm.passhealthcare.com/voc/userSearch.do','오션 관리자'),
+      '기능에서 식단코칭을 선택해 검색 → 엑셀을 추출한다.',
+      '인센티브 정산 파일 양식에 맞춰 회차별 답변 수(1~2회차 · 3~5회차 · 6회 이상)·상담 누적·상담 인입 수를 기입한다.<div class="sub">정산 업무 탭의 월 정산 워크벤치 「식단코치」에서 같은 계산을 검증할 수 있다.</div>',
+      '금액을 산정한다 — 기본급 500,000원 + 3~5회차 답변 합계 × 10,000원 + 6회 이상 답변 합계 × 15,000원, 부가세 10% 가산.<div class="sub">8월 양식 기준 — 계약이 바뀌면 워크벤치 단가와 함께 고친다</div>',
+      '코치에게 메일로 공유한다.',
+    ]},
+    {h:'체크포인트', list:['조회 기간이 전월 1일~말일인지', '회차 구간(3~5회차 / 6회 이상)을 섞지 않았는지', '부가세 가산 여부']},
+   ],
+   contacts:[['식단코치','조대식 코치 &lt;ppo2569@naver.com&gt;'],['내부 컨펌','management / 하순봉 전무 / 서비스기획']],
+   warns:['인센티브 단가(기본급 50만원 · 회차별 1만/1.5만원)는 8월 양식 기준입니다. 현행 계약 조건을 확인하세요.']},
+
+  {type:'card', title:'웹하드 정산 (안심클라우드)', sub:'오션블루 안심클라우드',
+   fields:[['목적','안심클라우드 웹하드 사용료 월 정산 — 유료 회원이 쓴 날수만큼 일할 계산'],['시점','매월 초(전월분)'],['도구','웹하드 정산 목록(일자별) · 웹하드 정산 사용자 목록_CTN 엑셀(통신사별), 정산 업무 탭(월 정산 워크벤치)'],['산출물','안심클라우드_웹하드_M월_정산_YYMMDD.xlsx']],
+   sections:[
+    {h:'수행 절차', steps:[
+      '통신사별(LGU+·SKT 등) 원천 파일 두 종류를 받는다 — 「웹하드 정산 목록」(일자별 유료 누적)과 「웹하드 정산 사용자 목록_CTN」(회원별 이용일수·금액).',
+      '정산 업무 탭 › 안심클라우드 웹하드 › 원천 파일 › 「원천 엑셀 불러오기」에서 두 종류를 한꺼번에 선택한다.<div class="sub">파일 종류와 통신사는 자동으로 구분된다. 일자별 파일은 통신사끼리 날짜별로 합산, CTN 파일은 통신사끼리 이어 붙인다.</div>',
+      '일 단가 = ROUND(월 기준 금액 500원 ÷ 월 일수, 2) → 일별 유료 누적 × 일 단가로 금액을 산정한다.',
+      '일자별 합계(가입자-일)와 CTN 총 유료 이용일수·금액이 일치하는지 대조한다.',
+      '일치하면 정산 파일을 내려받아 전달한다.',
+    ]},
+    {h:'체크포인트', list:['CTN 원장과 이용일수·금액이 모두 일치하는지 — 하나라도 다르면 넘기지 않는다', '월 일수(28·29·30·31)에 맞는 일 단가인지', '통신사 파일이 빠지지 않았는지']},
+   ],
+   warns:['월 기준 금액(500원)은 8월 정산 파일 기준입니다. 계약 단가와 전달처(정산 담당자)를 확인해 이 카드에 채워 주세요.']}
  ]},
 
 {id:'m4', no:'04', title:'CRM 마케팅 (푸시 · 문자)', desc:'가입한 고객을 서비스로 다시 불러들이고, 장기 미이용에 따른 무과금 인식을 방지하는 업무입니다. 통신사 3사가 각각 다른 창구·양식·일정을 쓰기 때문에 "3사 병렬"로 익히는 것이 핵심입니다.',
@@ -1743,33 +1770,41 @@ function getItem(m,i){ var mod = MODULES.filter(function(x){return x.id===m;})[0
 
 var NAV = [
   {home:true, id:'home', label:'홈 · 전체 개요'},
-  {group:'공통 운영 항목', items:[
-    {id:'qa', label:'서비스 QA', refs:[['m7',0]], url:'https://docs.google.com/spreadsheets/d/18xRgY7AEt9kKr2wGDP7AhYziOQVZFPxNZc0Nc2jSDPM/edit?gid=751950539#gid=751950539', urlLabel:'헬스케어 TC'},
-    {id:'push-mgmt', label:'푸시 마케팅 관리', refs:[['m4',0],['m4',1],['m4',2],['m4',3]], lede:'통신사 3사에 매월 반복되는 PUSH 발송계획 요청부터 등록, 클릭율 집계까지의 흐름입니다.', url:'https://docs.google.com/spreadsheets/d/1YP8tksLstz9jiVZ5aAzmJgXTZvgoLEJBjs07bsLQBCk/edit#gid=0', urlLabel:'푸시마케팅_데이터 시트'},
-    {id:'free-data', label:'무료 가입자 통계 공유', refs:[['m2',3],['m2',5]], lede:'LGU+ 파트너스·오션 관리자에 매월 제출하는 무료 가입자 현황 보고 업무입니다.', url:'https://adm.passhealthcare.com/voc/userSearch.do', urlLabel:'오션 관리자'},
-    {id:'lgu-ga', label:'LG U+ GA 실적 전달', refs:[['m2',4]], url:'https://analytics.google.com/analytics/web/#/p372872455/reports/intelligenthome', urlLabel:'GA4(와이즈솔루션)'},
-    {id:'telco-check', label:'통신사 점검 대응', refs:[['m5',0],['m5',1]], lede:'통신사별 점검 일정을 파악해 내부에 공지하고, 점검 후 서비스 정상 여부를 확인합니다.'},
-    {id:'protection-check', label:'부가서비스 점검 · 이용자보호', refs:[['m5',2],['m5',3]], lede:'분기별 이용자보호 조사와 연 1회 KT 보안점검 등, 통신사가 요구하는 정기 점검·조사 대응입니다.'},
+  /* 좌측 메뉴 = 「운영업무 리스트.xlsx」(2026-09-30) — 목표 2개 › 업무 분류 5개(no) › 상세 업무. dept = 관련 부서.
+     페이지 id 는 그대로 두었다(이미지·드라이브·캘린더·실행센터 연결이 id 로 걸려 있다). 목록에 없는 업무는 「기타 업무」로 모은다. */
+  {goal:'통신사 파트너십 강화', no:1, group:'민원 대응', dept:'CS팀 · 통신사', items:[
     {id:'telco-complaint', label:'통신사 민원 대응', refs:[['m5',4]], url:'https://partner.wiseapi.kr/voc/userSearch.do', urlLabel:'파트너스 시스템'},
     {id:'sub-fact-check', label:'가입 사실 내역 확인', refs:[['m6',4]], url:'https://adm.passhealthcare.com/summary/paidUserPnumberList.do', urlLabel:'오션 관리자 · 유료가입 전화번호 조회'},
     {id:'cs-inquiry', label:'CS 민원 지원', refs:[['m6',0],['m6',1],['m6',2],['m6',3]], lede:'슬랙·전화로 들어오는 민원의 처리 체계와, 각 관리자에서 회원을 조회하는 방법입니다.', url:'https://partner.wiseapi.kr/voc/userSearch.do', urlLabel:'파트너스 시스템'},
+  ]},
+  {no:2, group:'데이터 실적 집계', dept:'통신사 · 마케팅', items:[
+    {id:'free-data', label:'무료 가입자 통계 공유', refs:[['m2',3],['m2',5]], lede:'LGU+ 파트너스·오션 관리자에 매월 제출하는 무료 가입자 현황 보고 업무입니다.', url:'https://adm.passhealthcare.com/voc/userSearch.do', urlLabel:'오션 관리자'},
+    {id:'lgu-ga', label:'LG U+ GA 실적 전달', refs:[['m2',4]], url:'https://analytics.google.com/analytics/web/#/p372872455/reports/intelligenthome', urlLabel:'GA4(와이즈솔루션)'},
+    {id:'telco-check', label:'통신사 점검 대응', refs:[['m5',0],['m5',1]], lede:'통신사별 점검 일정을 파악해 내부에 공지하고, 점검 후 서비스 정상 여부를 확인합니다.'},
+    {id:'protection-check', label:'부가서비스 점검 · 이용자 보호', refs:[['m5',2],['m5',3]], lede:'분기별 이용자보호 조사와 연 1회 KT 보안점검 등, 통신사가 요구하는 정기 점검·조사 대응입니다.'},
     {id:'ad-review', label:'마케팅 이미지 검수', refs:[['m5',5]], url:'https://deluxe-ear-076.notion.site/2f825368a17980a3a1e5f7f8fde31617', urlLabel:'외부가입창 가이드(노션)'},
-    {id:'event-ops', label:'이벤트 기획', refs:[['m1',0],['m1',1],['m1',2],['m1',3],['m1',4],['m1',5],['m1',6],['m1',7],['m1',8],['m1',9]], lede:'기획 완료 후 관리자·PASS·빌레터에 이벤트를 등록하고, 테스트·기록·퍼널 집계까지 진행하는 전체 절차입니다.', url:'https://docs.google.com/spreadsheets/d/1Eh2frfgnz0eCUJhs2A5UCGDE20Ixu6HmRYYDDGa0l78/edit#gid=957718005', urlLabel:'부가서비스 이벤트 시트'},
-    {id:'publishing', label:'모니터링', refs:[['m7',1]], url:'http://pms.wisesolutions.co.kr:8080/', urlLabel:'요나 PMS'},
-    {id:'kisa', label:'KISA 스팸 대응', refs:[['m6',5]]},
+    {id:'health-metrics', label:'마케팅 실적 집계', refs:[['m2',0],['m2',1],['m2',2]], lede:'매일 아침 5개 도구를 돌며 헬스케어 지표를 채우고, 제휴 클릭·가입 데이터를 함께 집계합니다.', url:'https://docs.google.com/spreadsheets/d/1azwDHc2YTYAr80YK-cKyaZ2-AosNK9Fyt-LuAbVCf_c/edit?gid=1139050704#gid=1139050704', urlLabel:'헬스케어 데이터 관리 시트'},
+    {id:'publishing', label:'서비스 모니터링', refs:[['m7',1]], url:'http://pms.wisesolutions.co.kr:8080/', urlLabel:'요나 PMS'},
   ]},
-  {group:'헬스케어', items:[
+  {goal:'부서 지원 · 서비스 품질 강화', no:3, group:'정산', dept:'재경팀', items:[
+    {id:'settlement', label:'제휴 광고 정산', refs:[['m3',0],['m3',1],['m3',2],['m3',3],['m3',4],['m3',5],['m3',6],['m3',7],['m3',8],['m3',9]], lede:'RS·CPS·CPA 정산 방식부터 제휴처별 계산식, 환불금 검토, 재경팀 불출까지 — 모든 정산 업무입니다.', url:'https://docs.google.com/spreadsheets/d/1IZli7Txs5okozrb5ZFm7AJwE9Jbp-TpdxRRqFSpCKyM/edit?pli=1#gid=589326908', urlLabel:'부가서비스 정산 관리 시트'},
+    {id:'diet-settle', label:'식단 코치 정산', refs:[['m3',10]], lede:'식단코칭을 맡은 코치의 월 인센티브를 서비스 이용 데이터로 산정해 공유합니다.', url:'#/settle', urlLabel:'정산 업무 탭(월 정산 워크벤치)'},
+    {id:'counselor-mgmt', label:'인건비 정산', refs:[['m6',7]], url:'https://mindcsl.wiseapi.kr/login', urlLabel:'상담사 포털'},
+    {id:'webhard-settle', label:'웹하드 정산', refs:[['m3',11]], lede:'안심클라우드 웹하드 사용료를 유료 이용일수만큼 일할 계산하고, 일자별 파일과 CTN 원장을 대조합니다.', url:'#/settle', urlLabel:'정산 업무 탭(월 정산 워크벤치)'},
+  ]},
+  {no:4, group:'CRM', dept:'기획팀', items:[
+    {id:'qa', label:'서비스 QA', refs:[['m7',0]], url:'https://docs.google.com/spreadsheets/d/18xRgY7AEt9kKr2wGDP7AhYziOQVZFPxNZc0Nc2jSDPM/edit?gid=751950539#gid=751950539', urlLabel:'헬스케어 TC'},
+    {id:'push-mgmt', label:'푸시 마케팅 관리', refs:[['m4',0],['m4',1],['m4',2],['m4',3]], lede:'통신사 3사에 매월 반복되는 PUSH 발송계획 요청부터 등록, 클릭율 집계까지의 흐름입니다.', url:'https://docs.google.com/spreadsheets/d/1YP8tksLstz9jiVZ5aAzmJgXTZvgoLEJBjs07bsLQBCk/edit#gid=0', urlLabel:'푸시마케팅_데이터 시트'},
+    {id:'event-ops', label:'이벤트 기획 (TMS · 엔딩노티)', refs:[['m1',0],['m1',1],['m1',2],['m1',3],['m1',4],['m1',5],['m1',6],['m1',7],['m1',8],['m1',9]], lede:'기획 완료 후 관리자·PASS·빌레터에 이벤트를 등록하고, 테스트·기록·퍼널 집계까지 진행하는 전체 절차입니다.', url:'https://docs.google.com/spreadsheets/d/1Eh2frfgnz0eCUJhs2A5UCGDE20Ixu6HmRYYDDGa0l78/edit#gid=957718005', urlLabel:'부가서비스 이벤트 시트'},
     {id:'event-prize', label:'이벤트 당첨자 상품 발송', refs:[['m1',10],['m1',11],['m1',12]], lede:'당첨자에게 경품을 발송하거나 신청 문자를 보내고, 공동부담 이벤트는 정산내역서까지 작성합니다.', url:'https://partner.wiseapi.kr/voc/userSearch.do', urlLabel:'파트너스 시스템'},
-    {id:'health-metrics', label:'헬스케어 마케팅 실적 집계', refs:[['m2',0],['m2',1],['m2',2]], lede:'매일 아침 5개 도구를 돌며 헬스케어 지표를 채우고, 제휴 클릭·가입 데이터를 함께 집계합니다.', url:'https://docs.google.com/spreadsheets/d/1azwDHc2YTYAr80YK-cKyaZ2-AosNK9Fyt-LuAbVCf_c/edit?gid=1139050704#gid=1139050704', urlLabel:'헬스케어 데이터 관리 시트'},
-    {id:'settlement', label:'제휴 정산 업무', refs:[['m3',0],['m3',1],['m3',2],['m3',3],['m3',4],['m3',5],['m3',6],['m3',7],['m3',8],['m3',9]], lede:'RS·CPS·CPA 정산 방식부터 제휴처별 계산식, 환불금 검토, 재경팀 불출까지 — 모든 정산 업무입니다.', url:'https://docs.google.com/spreadsheets/d/1IZli7Txs5okozrb5ZFm7AJwE9Jbp-TpdxRRqFSpCKyM/edit?pli=1#gid=589326908', urlLabel:'부가서비스 정산 관리 시트'},
-    {id:'health-content', label:'헬스케어 콘텐츠 기획', refs:[['m7',2]], url:'https://adm.passhealthcare.com/voc/userSearch.do', urlLabel:'오션 관리자'},
-  ]},
-  {group:'마인드케어', items:[
     {id:'monthly-sms', label:'월간 문자 발송', refs:[['m4',4],['m4',5]], lede:'헬스케어·마인드케어·투데이 유료회원 대상 월간 콘텐츠 문자 발송 업무입니다.', url:'https://adm.passhealthcare.com/voc/userSearch.do', urlLabel:'오션 관리자'},
     {id:'mindcare-counsel', label:'1:1 마음 상담 관리', refs:[['m6',6]], url:'https://admin.firstmindcare.com/', urlLabel:'마인드케어 관리자'},
-    {id:'counselor-mgmt', label:'인건비 정산 업무', refs:[['m6',7]], url:'https://mindcsl.wiseapi.kr/login', urlLabel:'상담사 포털'},
   ]},
-  {group:'관리 · 운영 지원', items:[
+  {no:5, group:'콘텐츠', dept:'기획팀', items:[
+    {id:'health-content', label:'헬스케어 콘텐츠 기획', refs:[['m7',2]], url:'https://adm.passhealthcare.com/voc/userSearch.do', urlLabel:'오션 관리자'},
+  ]},
+  {group:'기타 업무', dept:'운영업무 리스트 외', items:[
+    {id:'kisa', label:'KISA 스팸 대응', refs:[['m6',5]]},
     {id:'number-request', label:'대표번호 · 발신번호 신청', refs:[['m8',2],['m8',3]], lede:'신규 서비스 오픈 시 고객센터 대표번호 개통과 비즈뿌리오 발신번호 등록 절차입니다.', url:'https://www.bizppurio.com/bizlounge/dashboard', urlLabel:'비즈뿌리오'},
   ]},
   {group:'참고 자료', items:[
@@ -1823,7 +1858,7 @@ function metaPills(items){
 }
 function renderActions(entry){
   var primary = entry.url
-    ? '<a class="link-btn" href="'+entry.url+'" target="_blank" rel="noopener">'+ICONS.link+' 페이지 바로가기'+(entry.urlLabel?' — '+entry.urlLabel:'')+'</a>'
+    ? '<a class="link-btn" href="'+entry.url+'"'+(entry.url.charAt(0)==='#'?'':' target="_blank" rel="noopener"')+'>'+ICONS.link+' 페이지 바로가기'+(entry.urlLabel?' — '+entry.urlLabel:'')+'</a>'
     : '<button class="ghost-btn" disabled title="실제 관리자·시트 링크는 팀에서 연결해 주세요">'+ICONS.link+' 페이지 바로가기</button>';
   return '<div class="page-actions">'+primary+
     '<button class="ghost-btn" disabled title="양식 파일은 팀 드라이브에서 연결해 주세요">'+ICONS.download+' 양식 다운로드</button>'+
@@ -1980,7 +2015,9 @@ function setupNav(){
   var html = '<li><a class="home-link" data-id="home" onclick="navigate(\'home\')"><span class="icon">🏠</span>홈 · 전체 개요</a></li>';
   NAV.forEach(function(entry){
     if(entry.home) return;
-    html += '<li class="navdivider"></li><li class="navgroup-label">'+entry.group+'</li>';
+    if(entry.goal) html += '<li class="navgoal-label">'+entry.goal+'</li>';
+    else html += '<li class="navdivider"></li>';
+    html += '<li class="navgroup-label">'+(entry.no?entry.no+'. ':'')+entry.group+(entry.dept?'<span class="navgroup-dept">'+entry.dept+'</span>':'')+'</li>';
     entry.items.forEach(function(p){
       html += '<li><a data-id="'+p.id+'" onclick="navigate(\''+p.id+'\')">'+p.label+'</a></li>';
     });
