@@ -139,6 +139,8 @@ button{font:inherit}
 .navlist a.home-link.active{background:var(--accent-soft);color:var(--accent-ink)}
 .navdivider{height:1px;background:var(--border);margin:14px 6px}
 .navgroup-label{font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-faint);padding:0 8px;margin:2px 0 4px;font-weight:600}
+.run-btn{background:var(--accent);color:var(--surface)!important;border-color:transparent;font-weight:600}
+.run-btn:hover{filter:brightness(1.08)}
 .navgroup-dept{font-weight:400;letter-spacing:0;text-transform:none;margin-left:6px;opacity:.85}
 .navgoal-label{font-size:11px;font-weight:700;color:var(--ink);background:var(--surface-2,rgba(0,0,0,.04));border-radius:6px;padding:5px 8px;margin:16px 0 8px}
 
@@ -1779,29 +1781,29 @@ var NAV = [
   ]},
   {no:2, group:'데이터 실적 집계', dept:'통신사 · 마케팅', items:[
     {id:'free-data', label:'무료 가입자 통계 공유', refs:[['m2',3],['m2',5]], lede:'LGU+ 파트너스·오션 관리자에 매월 제출하는 무료 가입자 현황 보고 업무입니다.', url:'https://adm.passhealthcare.com/voc/userSearch.do', urlLabel:'오션 관리자'},
-    {id:'lgu-ga', label:'LG U+ GA 실적 전달', refs:[['m2',4]], url:'https://analytics.google.com/analytics/web/#/p372872455/reports/intelligenthome', urlLabel:'GA4(와이즈솔루션)'},
+    {id:'lgu-ga', skills:['lgu-healthcare-monthly-ga'], label:'LG U+ GA 실적 전달', refs:[['m2',4]], url:'https://analytics.google.com/analytics/web/#/p372872455/reports/intelligenthome', urlLabel:'GA4(와이즈솔루션)'},
     {id:'telco-check', label:'통신사 점검 대응', refs:[['m5',0],['m5',1]], lede:'통신사별 점검 일정을 파악해 내부에 공지하고, 점검 후 서비스 정상 여부를 확인합니다.'},
     {id:'protection-check', label:'부가서비스 점검 · 이용자 보호', refs:[['m5',2],['m5',3]], lede:'분기별 이용자보호 조사와 연 1회 KT 보안점검 등, 통신사가 요구하는 정기 점검·조사 대응입니다.'},
-    {id:'ad-review', label:'마케팅 이미지 검수', refs:[['m5',5]], url:'https://deluxe-ear-076.notion.site/2f825368a17980a3a1e5f7f8fde31617', urlLabel:'외부가입창 가이드(노션)'},
-    {id:'health-metrics', label:'마케팅 실적 집계', refs:[['m2',0],['m2',1],['m2',2]], lede:'매일 아침 5개 도구를 돌며 헬스케어 지표를 채우고, 제휴 클릭·가입 데이터를 함께 집계합니다.', url:'https://docs.google.com/spreadsheets/d/1azwDHc2YTYAr80YK-cKyaZ2-AosNK9Fyt-LuAbVCf_c/edit?gid=1139050704#gid=1139050704', urlLabel:'헬스케어 데이터 관리 시트'},
+    {id:'ad-review', skills:['ad-image-review-request'], label:'마케팅 이미지 검수', refs:[['m5',5]], url:'https://deluxe-ear-076.notion.site/2f825368a17980a3a1e5f7f8fde31617', urlLabel:'외부가입창 가이드(노션)'},
+    {id:'health-metrics', skills:['healthcare-daily-aggregation','healthcare-ga-daily-input'], label:'마케팅 실적 집계', refs:[['m2',0],['m2',1],['m2',2]], lede:'매일 아침 5개 도구를 돌며 헬스케어 지표를 채우고, 제휴 클릭·가입 데이터를 함께 집계합니다.', url:'https://docs.google.com/spreadsheets/d/1azwDHc2YTYAr80YK-cKyaZ2-AosNK9Fyt-LuAbVCf_c/edit?gid=1139050704#gid=1139050704', urlLabel:'헬스케어 데이터 관리 시트'},
     {id:'publishing', label:'서비스 모니터링', refs:[['m7',1]], url:'http://pms.wisesolutions.co.kr:8080/', urlLabel:'요나 PMS'},
   ]},
   {goal:'부서 지원 · 서비스 품질 강화', no:3, group:'정산', dept:'재경팀', items:[
-    {id:'settlement', label:'제휴 광고 정산', refs:[['m3',0],['m3',1],['m3',2],['m3',3],['m3',4],['m3',5],['m3',6],['m3',7],['m3',8],['m3',9]], lede:'RS·CPS·CPA 정산 방식부터 제휴처별 계산식, 환불금 검토, 재경팀 불출까지 — 모든 정산 업무입니다.', url:'https://docs.google.com/spreadsheets/d/1IZli7Txs5okozrb5ZFm7AJwE9Jbp-TpdxRRqFSpCKyM/edit?pli=1#gid=589326908', urlLabel:'부가서비스 정산 관리 시트'},
-    {id:'diet-settle', label:'식단 코치 정산', refs:[['m3',10]], lede:'식단코칭을 맡은 코치의 월 인센티브를 서비스 이용 데이터로 산정해 공유합니다.', url:'#/settle', urlLabel:'정산 업무 탭(월 정산 워크벤치)'},
+    {id:'settlement', skills:['monthly-settlement-verification'], label:'제휴 광고 정산', refs:[['m3',0],['m3',1],['m3',2],['m3',3],['m3',4],['m3',5],['m3',6],['m3',7],['m3',8],['m3',9]], lede:'RS·CPS·CPA 정산 방식부터 제휴처별 계산식, 환불금 검토, 재경팀 불출까지 — 모든 정산 업무입니다.', url:'https://docs.google.com/spreadsheets/d/1IZli7Txs5okozrb5ZFm7AJwE9Jbp-TpdxRRqFSpCKyM/edit?pli=1#gid=589326908', urlLabel:'부가서비스 정산 관리 시트'},
+    {id:'diet-settle', skills:['monthly-settlement-verification'], label:'식단 코치 정산', refs:[['m3',10]], lede:'식단코칭을 맡은 코치의 월 인센티브를 서비스 이용 데이터로 산정해 공유합니다.', url:'#/settle', urlLabel:'정산 업무 탭(월 정산 워크벤치)'},
     {id:'counselor-mgmt', label:'인건비 정산', refs:[['m6',7]], url:'https://mindcsl.wiseapi.kr/login', urlLabel:'상담사 포털'},
     {id:'webhard-settle', label:'웹하드 정산', refs:[['m3',11]], lede:'안심클라우드 웹하드 사용료를 유료 이용일수만큼 일할 계산하고, 일자별 파일과 CTN 원장을 대조합니다.', url:'#/settle', urlLabel:'정산 업무 탭(월 정산 워크벤치)'},
   ]},
   {no:4, group:'CRM', dept:'기획팀', items:[
     {id:'qa', label:'서비스 QA', refs:[['m7',0]], url:'https://docs.google.com/spreadsheets/d/18xRgY7AEt9kKr2wGDP7AhYziOQVZFPxNZc0Nc2jSDPM/edit?gid=751950539#gid=751950539', urlLabel:'헬스케어 TC'},
-    {id:'push-mgmt', label:'푸시 마케팅 관리', refs:[['m4',0],['m4',1],['m4',2],['m4',3]], lede:'통신사 3사에 매월 반복되는 PUSH 발송계획 요청부터 등록, 클릭율 집계까지의 흐름입니다.', url:'https://docs.google.com/spreadsheets/d/1YP8tksLstz9jiVZ5aAzmJgXTZvgoLEJBjs07bsLQBCk/edit#gid=0', urlLabel:'푸시마케팅_데이터 시트'},
+    {id:'push-mgmt', skills:['telco-push-copy','lgu-push-schedule-register'], label:'푸시 마케팅 관리', refs:[['m4',0],['m4',1],['m4',2],['m4',3]], lede:'통신사 3사에 매월 반복되는 PUSH 발송계획 요청부터 등록, 클릭율 집계까지의 흐름입니다.', url:'https://docs.google.com/spreadsheets/d/1YP8tksLstz9jiVZ5aAzmJgXTZvgoLEJBjs07bsLQBCk/edit#gid=0', urlLabel:'푸시마케팅_데이터 시트'},
     {id:'event-ops', label:'이벤트 기획 (TMS · 엔딩노티)', refs:[['m1',0],['m1',1],['m1',2],['m1',3],['m1',4],['m1',5],['m1',6],['m1',7],['m1',8],['m1',9]], lede:'기획 완료 후 관리자·PASS·빌레터에 이벤트를 등록하고, 테스트·기록·퍼널 집계까지 진행하는 전체 절차입니다.', url:'https://docs.google.com/spreadsheets/d/1Eh2frfgnz0eCUJhs2A5UCGDE20Ixu6HmRYYDDGa0l78/edit#gid=957718005', urlLabel:'부가서비스 이벤트 시트'},
     {id:'event-prize', label:'이벤트 당첨자 상품 발송', refs:[['m1',10],['m1',11],['m1',12]], lede:'당첨자에게 경품을 발송하거나 신청 문자를 보내고, 공동부담 이벤트는 정산내역서까지 작성합니다.', url:'https://partner.wiseapi.kr/voc/userSearch.do', urlLabel:'파트너스 시스템'},
-    {id:'monthly-sms', label:'월간 문자 발송', refs:[['m4',4],['m4',5]], lede:'헬스케어·마인드케어·투데이 유료회원 대상 월간 콘텐츠 문자 발송 업무입니다.', url:'https://adm.passhealthcare.com/voc/userSearch.do', urlLabel:'오션 관리자'},
+    {id:'monthly-sms', skills:['monthly-member-sms-copy','paid-sms-batch-relay','monthly-member-sms-handover'], label:'월간 문자 발송', refs:[['m4',4],['m4',5]], lede:'헬스케어·마인드케어·투데이 유료회원 대상 월간 콘텐츠 문자 발송 업무입니다.', url:'https://adm.passhealthcare.com/voc/userSearch.do', urlLabel:'오션 관리자'},
     {id:'mindcare-counsel', label:'1:1 마음 상담 관리', refs:[['m6',6]], url:'https://admin.firstmindcare.com/', urlLabel:'마인드케어 관리자'},
   ]},
   {no:5, group:'콘텐츠', dept:'기획팀', items:[
-    {id:'health-content', label:'헬스케어 콘텐츠 기획', refs:[['m7',2]], url:'https://adm.passhealthcare.com/voc/userSearch.do', urlLabel:'오션 관리자'},
+    {id:'health-content', skills:['healthcare-cardnews-quiz'], label:'헬스케어 콘텐츠 기획', refs:[['m7',2]], url:'https://adm.passhealthcare.com/voc/userSearch.do', urlLabel:'오션 관리자'},
   ]},
   {group:'기타 업무', dept:'운영업무 리스트 외', items:[
     {id:'kisa', label:'KISA 스팸 대응', refs:[['m6',5]]},
@@ -1838,7 +1840,7 @@ function findPage(id){
     for(var i=0;i<entry.items.length;i++){
       if(entry.items[i].id===id){
         var p = entry.items[i];
-        return {group:entry.group, id:p.id, label:p.label, refs:p.refs, lede:p.lede, url:p.url, urlLabel:p.urlLabel};
+        return {group:entry.group, id:p.id, label:p.label, refs:p.refs, lede:p.lede, url:p.url, urlLabel:p.urlLabel, skills:p.skills};
       }
     }
   }
@@ -1856,11 +1858,23 @@ function metaPills(items){
     .map(function(f){ return '<span class="kv-pill"><span class="k">'+f[0]+'</span><span class="v">'+f[1]+'</span></span>'; });
   return pills.length ? '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px">'+pills.join('')+'</div>' : '';
 }
+/* 업무 페이지 → 상세 업무 처리(실행 센터) 스킬. id 는 ops-center.html 의 OPS_SKILLS id 와 같아야 한다. */
+var SKILL_NAMES = {
+  'healthcare-daily-aggregation':'헬스케어 일일 데이터 집계', 'healthcare-ga-daily-input':'GA4 일자별 지표 입력',
+  'lgu-healthcare-monthly-ga':'LG U+ 헬스케어 월간 GA 지표', 'ad-image-review-request':'광고 이미지 검수 요청서',
+  'monthly-settlement-verification':'월 정산 검증', 'telco-push-copy':'통신사 PUSH 문구 기획',
+  'lgu-push-schedule-register':'LG U+ PUSH 스케줄 등록', 'monthly-member-sms-copy':'월간 유료회원 문자 문구 기획',
+  'paid-sms-batch-relay':'유료회원 문자 이어발송', 'monthly-member-sms-handover':'월간 문자 인계 가이드',
+  'healthcare-cardnews-quiz':'헬스케어 카드뉴스 · 건강퀴즈'
+};
 function renderActions(entry){
   var primary = entry.url
     ? '<a class="link-btn" href="'+entry.url+'"'+(entry.url.charAt(0)==='#'?'':' target="_blank" rel="noopener"')+'>'+ICONS.link+' 페이지 바로가기'+(entry.urlLabel?' — '+entry.urlLabel:'')+'</a>'
     : '<button class="ghost-btn" disabled title="실제 관리자·시트 링크는 팀에서 연결해 주세요">'+ICONS.link+' 페이지 바로가기</button>';
-  return '<div class="page-actions">'+primary+
+  var run = (entry.skills||[]).map(function(id){
+    return '<a class="link-btn run-btn" href="#/ops/-/-/-/'+id+'" title="상세 업무 처리(실행 센터)에서 이 업무의 스킬 요청문을 만들고 Claude에서 실행합니다">▶ 이 업무 실행하기 — '+(SKILL_NAMES[id]||id)+'</a>';
+  }).join('');
+  return '<div class="page-actions">'+run+primary+
     '<button class="ghost-btn" disabled title="양식 파일은 팀 드라이브에서 연결해 주세요">'+ICONS.download+' 양식 다운로드</button>'+
   '</div>';
 }
