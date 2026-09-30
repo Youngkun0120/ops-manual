@@ -1,0 +1,1677 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>월 정산 워크벤치</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<style id="pageStyle">@page{size:A4;margin:14mm}</style>
+<style>
+:root{--bg:#f2f5f8;--panel:#fff;--ink:#1c2a35;--muted:#5f7282;--line:#dbe3ea;--brand:#0a67a0;--brand2:#0d4f7a;--soft:#e9f2f8;--ok:#1d8049;--okbg:#e4f3ea;--warn:#a86400;--warnbg:#fff3de;--err:#bf3526;--errbg:#fdeae8;--wk:#f7f9fb;--input:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111820;--panel:#18222c;--ink:#e3ebf1;--muted:#98abba;--line:#2c3a47;--brand:#4aa6dd;--brand2:#7cc0ea;--soft:#1d2e3c;--ok:#5cc98a;--okbg:#17301f;--warn:#f0b24f;--warnbg:#33280f;--err:#ff8a7a;--errbg:#3a1b17;--wk:#1c2731;--input:#101820}}
+:root[data-theme="dark"]{--bg:#111820;--panel:#18222c;--ink:#e3ebf1;--muted:#98abba;--line:#2c3a47;--brand:#4aa6dd;--brand2:#7cc0ea;--soft:#1d2e3c;--ok:#5cc98a;--okbg:#17301f;--warn:#f0b24f;--warnbg:#33280f;--err:#ff8a7a;--errbg:#3a1b17;--wk:#1c2731;--input:#101820}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.6 "Pretendard","Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--brand)}
+.top{position:sticky;top:0;z-index:10;display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:12px 20px;background:var(--panel);border-bottom:1px solid var(--line)}
+.top h1{font-size:17px;margin:0;white-space:nowrap}
+.top label.m{display:flex;align-items:center;gap:6px;font-weight:600}
+.top input[type=month]{padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:var(--input)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{padding:3px 10px;border-radius:999px;background:var(--soft);color:var(--brand2);font-size:12.5px;white-space:nowrap}
+.chip.warn{background:var(--warnbg);color:var(--warn)}
+.grow{flex:1}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--brand);background:var(--brand);color:#fff;padding:6px 12px;border-radius:6px;cursor:pointer;text-decoration:none;font-size:13px;white-space:nowrap}
+.btn.ghost{background:transparent;color:var(--brand)}
+.btn.sm{padding:3px 9px;font-size:12px}
+.btn.danger{border-color:var(--err);color:var(--err);background:transparent}
+.btn[disabled]{opacity:.5;cursor:wait}
+.layout{display:grid;grid-template-columns:220px minmax(0,1fr);min-height:calc(100vh - 58px)}
+nav{border-right:1px solid var(--line);background:var(--panel);padding:14px 10px;position:sticky;top:58px;height:calc(100vh - 58px);overflow:auto}
+.navgroup{font-size:11.5px;color:var(--muted);font-weight:700;margin:14px 8px 4px;letter-spacing:.02em}
+.navitem{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:0;background:none;padding:7px 10px;border-radius:6px;cursor:pointer}
+.navitem:hover{background:var(--soft)}
+.navitem.on{background:var(--brand);color:#fff}
+.dot{width:8px;height:8px;border-radius:50%;flex:none;background:var(--line)}
+.dot.prog{background:var(--warn)}.dot.done{background:var(--ok)}.dot.err{background:var(--err)}
+main{padding:22px 26px 60px;max-width:1240px;width:100%}
+.crumb{color:var(--muted);font-size:12.5px}
+.titlebar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:2px 0 10px}
+.titlebar h2{margin:0;font-size:22px}
+.badge{font-size:12px;padding:2px 9px;border-radius:999px;background:var(--soft);color:var(--muted);font-weight:600;white-space:nowrap}
+.badge.prog{background:var(--warnbg);color:var(--warn)}.badge.done{background:var(--okbg);color:var(--ok)}.badge.err{background:var(--errbg);color:var(--err)}
+.copyrow{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.copy{border:1px dashed var(--line);background:var(--panel);padding:3px 10px;border-radius:6px;cursor:pointer;font-size:12.5px}
+.copy b{color:var(--brand2);font-weight:600}
+.copy:hover{border-color:var(--brand)}
+.note{background:var(--soft);border-left:3px solid var(--brand);padding:8px 12px;border-radius:4px;margin-bottom:14px;font-size:13px}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin-bottom:14px}
+.card h3{margin:0 0 10px;font-size:15px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.card h3 small{font-weight:400;color:var(--muted);font-size:12.5px}
+ol.checks{list-style:none;margin:0;padding:0;counter-reset:s}
+ol.checks li{counter-increment:s;border-bottom:1px solid var(--line)}
+ol.checks li:last-child{border:0}
+ol.checks label{display:flex;gap:10px;align-items:flex-start;padding:7px 2px;cursor:pointer}
+ol.checks label::before{content:counter(s);flex:none;width:20px;height:20px;border-radius:50%;background:var(--soft);color:var(--brand2);font-size:11.5px;display:grid;place-items:center;margin-top:1px}
+ol.checks input{margin-top:4px}
+ol.checks input:checked~span{color:var(--muted);text-decoration:line-through}
+.progress{height:6px;background:var(--soft);border-radius:4px;overflow:hidden;margin-bottom:8px}
+.progress i{display:block;height:100%;background:var(--ok)}
+.amount{font-size:28px;font-weight:700;letter-spacing:-.01em;margin:2px 0 6px;font-variant-numeric:tabular-nums}
+.amount small{font-size:13px;font-weight:500;color:var(--muted);margin-left:4px}
+dl.lines{display:grid;grid-template-columns:auto 1fr;gap:3px 14px;margin:0 0 10px;font-size:13px}
+dl.lines dt{color:var(--muted)}dl.lines dd{margin:0;text-align:right;font-variant-numeric:tabular-nums}
+.msgs{list-style:none;padding:0;margin:0 0 12px;display:grid;gap:5px}
+.msgs li{padding:6px 10px;border-radius:6px;font-size:12.5px}
+.msgs .e{background:var(--errbg);color:var(--err)}.msgs .w{background:var(--warnbg);color:var(--warn)}.msgs .o{background:var(--okbg);color:var(--ok)}.msgs .i{background:var(--soft);color:var(--brand2)}
+.btnrow{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.paste{display:grid;grid-template-columns:minmax(0,1fr) 250px;gap:12px;margin-bottom:12px}
+.paste textarea{width:100%;min-height:110px;border:1px solid var(--line);border-radius:6px;padding:8px;background:var(--input);font-family:Consolas,monospace;font-size:12.5px;resize:vertical}
+.mapbox{font-size:12.5px;display:grid;gap:5px;align-content:start}
+.mapbox .row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.mapbox select,.maptbl select{padding:2px 4px;border:1px solid var(--line);border-radius:4px;background:var(--input)}
+.help{color:var(--muted);font-size:12px}
+.tablewrap{overflow:auto;max-height:640px;border:1px solid var(--line);border-radius:6px}
+table.g{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+table.g th,table.g td{border-bottom:1px solid var(--line);padding:3px 8px;text-align:right;white-space:nowrap}
+table.g thead th{position:sticky;top:0;background:var(--soft);color:var(--brand2);font-weight:600;z-index:1}
+table.g tfoot td{position:sticky;bottom:0;background:var(--soft);font-weight:700}
+table.g td:first-child,table.g th:first-child{text-align:left}
+table.g tr.wk td{background:var(--wk)}
+table.g tr.miss td:first-child{color:var(--err)}
+table.g input{width:88px;text-align:right;border:1px solid transparent;border-radius:4px;padding:2px 6px;background:transparent;font-variant-numeric:tabular-nums}
+table.g input:hover{border-color:var(--line)}
+table.g input:focus{border-color:var(--brand);background:var(--input);outline:none}
+.wd{color:var(--muted);font-size:11.5px;margin-left:4px}
+.form{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px 14px}
+.form label{display:grid;gap:3px;font-size:12.5px;color:var(--muted)}
+.form input,.form select{padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--input);color:var(--ink);text-align:right}
+.form select{text-align:left}
+.form label.ck{display:flex;align-items:center;gap:6px;color:var(--ink)}
+details.set summary,details.sub summary{cursor:pointer;font-weight:700}
+details.set summary{font-size:15px}
+details.set[open] summary{margin-bottom:12px}
+details.sub{margin-top:10px}
+details.sub[open] summary{margin-bottom:8px}
+textarea.memo{width:100%;min-height:70px;border:1px solid var(--line);border-radius:6px;padding:8px;background:var(--input)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:14px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 16px}
+.stat span{display:block;color:var(--muted);font-size:12.5px}
+.stat b{font-size:19px}
+table.dash,table.maptbl{border-collapse:collapse;width:100%;font-size:13.5px}
+table.dash th,table.dash td,table.maptbl th,table.maptbl td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+table.maptbl th,table.maptbl td{padding:4px 8px;font-size:12.5px}
+table.dash th,table.maptbl th{color:var(--muted);font-weight:600;font-size:12.5px}
+table.dash td.n{text-align:right;font-variant-numeric:tabular-nums}
+table.dash.click tbody tr{cursor:pointer}
+table.dash.click tbody tr:hover{background:var(--soft)}
+.tw{overflow-x:auto}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13px;margin-bottom:10px}
+.kv dt{color:var(--muted)}.kv dd{margin:0;word-break:break-all}
+ul.plain{margin:0;padding-left:18px}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--panel);padding:9px 16px;border-radius:8px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:50;max-width:90vw}
+#toast.on{opacity:1}
+#print{display:none}
+@media (max-width:900px){.layout{display:block}nav{position:static;height:auto;display:flex;gap:4px;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line);padding:8px}.navgroup{display:none}.navitem{width:auto;white-space:nowrap}main{padding:16px}.grid2,.paste{grid-template-columns:1fr}.top{position:static}}
+@media print{
+  html,body{background:#fff!important;color:#000}
+  body>*:not(#print){display:none!important}
+  #print{display:block}
+  #print *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #print .basic{font-size:10pt}
+  #print .basic h1{font-size:16pt;margin:0 0 4mm}
+  #print .basic table{border-collapse:collapse;width:100%;margin-bottom:5mm}
+  #print .basic th,#print .basic td{border:1px solid #999;padding:1.2mm 2mm;text-align:right;font-size:9pt}
+  #print .basic th{background:#e8eef3}
+  #print .basic td:first-child,#print .basic th:first-child{text-align:left}
+  #print .basic tr{break-inside:avoid}
+  #print .basic .foot{color:#555;font-size:8.5pt;margin-top:4mm}
+  #print table.xl{border-collapse:collapse;table-layout:fixed;font-family:"Malgun Gothic","맑은 고딕",sans-serif;color:#000}
+  #print table.xl td{padding:0 3px;white-space:nowrap;overflow:hidden;line-height:1.15}
+  #print table.xl td.tx{overflow:visible}
+  #print table.xl tr{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>월 정산 워크벤치</h1>
+  <label class="m">정산월 <input type="month" id="month"></label>
+  <div class="chips" id="monthInfo"></div>
+  <div class="grow"></div>
+  <button class="btn ghost sm" id="btnBackup" title="입력 데이터와 설정을 JSON 파일로 저장">백업</button>
+  <label class="btn ghost sm" title="백업 JSON 파일 불러오기">복원<input type="file" id="restore" accept=".json" hidden></label>
+</header>
+<div class="layout">
+  <nav id="nav"></nav>
+  <main id="main"></main>
+</div>
+<div id="print"></div>
+<div id="toast"></div>
+
+<script>
+/* ═════════ 업무 정의 ═════════ */
+const OCEAN_URL = 'https://adm.passhealthcare.com/voc/userSearch.do';
+const WISE_URL = 'https://partner.wiseapi.kr/voc/refundList.do';
+const GROUPS = {
+  hc: { name: '오션블루 헬스케어 · 제휴광고', short: '헬스케어', system: '오션 관리자', url: OCEAN_URL, steps: [
+    '오션 관리자 시스템 접속',
+    '헬스케어 > 제휴광고 > 정산리포트 이동',
+    '이벤트 아이디(설정된 제휴사) / 정산월(년·월) 설정 후 검색',
+    '상세내역으로 이동',
+    '가입수·해지수·가입누적(보정)을 아래 일별 표에 붙여넣기',
+    '말일 기준 일수(28·29·30·31)의 단가로 계산된 금액 확인',
+    'Excel 파일 및 PDF로 불출' ] },
+  diet: { name: '오션블루 헬스케어 · 식단코치', short: '헬스케어', system: '오션 관리자', url: OCEAN_URL, steps: [
+    '오션 관리자 시스템 접속',
+    '헬스케어 > 집계관리 > 서비스 이용 데이터 선택',
+    '조회 시작일(정산월 1일) / 조회 종료일(정산월 말일) 설정 후 검색',
+    '일별 수치(회차별 답변·상담누적·인입)를 아래 표에 붙여넣기',
+    'Excel 파일 및 PDF로 불출' ] },
+  cloud: { name: '오션블루 안심클라우드', short: '안심클라우드', system: '', url: '', steps: [
+    '통신사별(LGU+·SKT) 일자별 가입자 엑셀과 CTN 엑셀 수령',
+    '아래 ‘원천 파일’에 일자별·CTN 엑셀을 모두 불러오기 (통신사별 자동 합산)',
+    '말일 기준 일수의 단가(500원 ÷ 일수)로 계산된 금액 확인',
+    'CTN 이용일수·금액 대조 (통신사별·합계)',
+    '요약 정리 후 Excel/PDF 저장' ] },
+  wise: { name: '와이즈 마인드케어', short: '마인드케어', system: '와이즈 파트너스', url: WISE_URL, steps: [
+    '와이즈 파트너스 시스템 접속',
+    '제휴광고 > 정산리포트 이동',
+    '이벤트 아이디(설정된 제휴사) / 정산월(년·월) 설정 후 검색',
+    '상세내역으로 이동',
+    '가입수·해지수·가입누적(보정)을 아래 일별 표에 붙여넣기',
+    '말일 기준 일수(28·29·30·31)의 단가로 계산된 금액 확인',
+    'Excel 파일 및 PDF로 불출' ] }
+};
+const NODAYS = { 28: '', 29: '', 30: '', 31: '' };
+const TARGETS = [
+  { id: 'HC01', group: 'hc', name: '안랩 배너', type: 'rs', file: '오션블루_안렙_26년_배너 광고 정산_260903.xlsx', def: { priceMode: 'fixed', fixed: 11.5, days: NODAYS },
+    note: '일반 RS: 일별 가입누적 × 일 단가 11.5원 (2026년 8월 파일 기준).' },
+  { id: 'HC02', group: 'hc', name: '안랩 엔딩팝업', type: 'ending', file: '오션블루_안렙_26년_엔딩 팝업 정산_260903.xlsx', def: { cpa: 2000, rs: 13.15 },
+    note: 'CPA (가입 − 당일해지) × 2,000원 + RS 가입누적 × 13.15원. 당일해지 수치가 꼭 필요합니다. (7월 파일은 RS 13.3원을 사용했으니 달마다 단가를 확인하세요)' },
+  { id: 'HC03', group: 'hc', name: '핀크', type: 'finq', file: '오션블루_핀크_26년_260903.xlsx', def: { unit: 400, threshold: 100000 },
+    note: '당월 발생액 = 말일 가입누적 × 400원. 이월 포함 잔액이 100,000원 이상이면 지급 대상, 미만이면 이월합니다. (기준의 부가세 포함 여부는 계약 확인)' },
+  { id: 'HC04', group: 'hc', name: '제이엠', type: 'rs', file: '2026_제이엠_마케팅_정산_내역_260903.xlsx', def: { priceMode: 'days', fixed: '', days: { 28: 19.64, 29: '', 30: 18.33, 31: 17.74 } },
+    note: '드리미와 같은 단가를 씁니다. 말일 기준 단가: 28일 19.64 · 30일 18.33 · 31일 17.74원. 29일 단가는 미확정입니다. 매월 8일 전 공유.' },
+  { id: 'HC05', group: 'hc', name: '드리미', type: 'rs', file: '2026_드리미_마케팅_정산_내역_260903.xlsx', def: { priceMode: 'days', fixed: '', days: { 28: 19.64, 29: '', 30: 18.33, 31: 17.74 } },
+    note: '말일 기준 단가: 28일 19.64 · 30일 18.33 · 31일 17.74원. 29일 단가는 미확정입니다. 매월 8일 전 공유.' },
+  { id: 'HC06', group: 'diet', name: '식단코치', type: 'diet', file: '2026 인센티브_260903.xlsx', def: { base: 500000, t35: 10000, t6: 15000, vat: true },
+    note: '기본급 500,000원 + 3~5회차 답변 합계 × 10,000원 + 6회 이상 답변 합계 × 15,000원, 부가세 10% 가산 (8월 양식 기준).' },
+  { id: 'MC01', group: 'wise', name: 'JSF(13)', type: 'rs', file: '와이즈파트너스-JSF(13)-8월분정산.xlsx', def: { priceMode: 'fixed', fixed: 19.7, days: NODAYS },
+    note: '일반 RS: 일별 가입누적 × 19.7원.' },
+  { id: 'MC02', group: 'wise', name: 'JSF(45)', type: 'rs', file: '와이즈파트너스-JSF(45)-8월분정산.xlsx', def: { priceMode: 'fixed', fixed: 19.7, days: NODAYS },
+    note: '일반 RS: 일별 가입누적 × 19.7원. 8월 원본 엑셀은 합계 수식이 31일을 빠뜨렸던 사례가 있어, 기존 양식 출력 시 합계 범위를 말일까지 자동으로 넓힙니다.' },
+  { id: 'CL01', group: 'cloud', name: '안심클라우드 웹하드', type: 'cloud', file: '안심클라우드_웹하드_8월_정산_260903.xlsx', def: { monthly: 500 },
+    note: '일 단가 = ROUND(500 ÷ 월 일수, 2). 일별 유료 누적 × 일 단가. 일자별 가입자 엑셀은 통신사끼리 날짜별 합산, CTN 엑셀은 통신사끼리 이어 붙여 대조합니다. CTN 원장과 이용일수·금액이 모두 일치해야 합니다.' }
+];
+const T = Object.fromEntries(TARGETS.map(t => [t.id, t]));
+const FIELDS = { rs: ['J', 'C', 'N'], ending: ['J', 'C', 'S', 'N'], finq: ['J', 'C', 'N'], cloud: ['N'], diet: ['a12', 'a35', 'a6', 'done', 'inflow'] };
+const KEYF = { diet: 'done' };
+const LABEL = { J: '가입', C: '해지', S: '당일해지', N: '가입누적(보정)', a12: '1~2회차', a35: '3~5회차', a6: '6회 이상', done: '상담누적(일)', inflow: '상담 인입 수' };
+const label = (t, k) => t.type === 'cloud' && k === 'N' ? '유료 누적' : LABEL[k];
+const DEFAULT_MAP = { rs: { J: 1, C: 2, N: 3 }, ending: { J: 1, C: 2, S: 3, N: 4 }, finq: { J: 1, C: 2, N: 3 }, cloud: { N: 1 }, diet: { a12: 1, a35: 2, a6: 3, done: 4, inflow: 5 } };
+
+/* ═════════ 저장소 ═════════ */
+const mem = {};
+const store = {
+  get(k, d) { if (k in mem) return mem[k]; try { const v = localStorage.getItem(k); if (v) return (mem[k] = JSON.parse(v)); } catch (e) {} return d; },
+  set(k, v) { mem[k] = v; try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+let settings = store.get('stl.settings.v1', {});
+function getS(id) {
+  const t = T[id], sv = settings[id] || {};
+  return { eventId: '', ...t.def, ...sv,
+    days: { ...(t.def.days || {}), ...(sv.days || {}) },
+    map: { ...(DEFAULT_MAP[t.type] || {}), ...(sv.map || {}) },
+    tplMap: { ...(sv.tplMap || {}) } };
+}
+function setS(id, patch) { settings[id] = { ...(settings[id] || {}), ...patch }; store.set('stl.settings.v1', settings); }
+const monthKey = ym => 'stl.m.' + ym;
+function tdataOf(ym, id) { const md = store.get(monthKey(ym), {}); return md[id] || { checks: [], rows: {}, extra: {}, memo: '' }; }
+function tdata(id) {
+  const md = state.md;
+  if (!md[id]) md[id] = { checks: [], rows: {}, extra: {}, memo: '' };
+  md[id].rows ||= {}; md[id].extra ||= {}; md[id].checks ||= [];
+  return md[id];
+}
+function saveMonth() { store.set(monthKey(state.ym), state.md); }
+
+/* 기존 양식 파일은 용량이 커서 IndexedDB에 저장 */
+/* 1순위 IndexedDB, 실패하면(파일을 더블클릭해 연 경우 등) localStorage에 base64로 보관. tplWhere: 'idb' | 'ls' | 'mem' */
+const tplMem = {}, tplWhere = {};
+function idb() { return new Promise((res, rej) => { try { const r = indexedDB.open('stl-tpl', 1); r.onupgradeneeded = () => r.result.createObjectStore('files'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); } catch (e) { rej(e); } }); }
+const idbGet = (db, id) => new Promise((res, rej) => { const q = db.transaction('files').objectStore('files').get(id); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); });
+function ab2b64(buf) { const u = new Uint8Array(buf); let s = ''; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); }
+function b642ab(b64) { const s = atob(b64), u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u.buffer; }
+async function tplPut(id, rec) {
+  tplMem[id] = rec; let where = 'mem';
+  try {
+    const db = await idb();
+    await new Promise((res, rej) => { const tx = db.transaction('files', 'readwrite'); tx.objectStore('files').put(rec, id); tx.oncomplete = res; tx.onerror = () => rej(tx.error); });
+    const back = await idbGet(db, id);
+    if (back && back.buf && back.buf.byteLength === rec.buf.byteLength) where = 'idb';
+  } catch (e) {}
+  if (where === 'idb') { try { localStorage.removeItem('stl.tpl.' + id); } catch (e) {} }
+  else { try { localStorage.setItem('stl.tpl.' + id, JSON.stringify({ name: rec.name, savedAt: rec.savedAt, source: rec.source, b64: ab2b64(rec.buf) })); where = 'ls'; } catch (e) {} }
+  try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) {}
+  tplWhere[id] = where; return where;
+}
+async function tplGet(id) {
+  if (tplMem[id]) return tplMem[id];
+  try { const v = await idbGet(await idb(), id); if (v && v.buf) { tplWhere[id] = 'idb'; return (tplMem[id] = v); } } catch (e) {}
+  try { const raw = localStorage.getItem('stl.tpl.' + id); if (raw) { const o = JSON.parse(raw); tplWhere[id] = 'ls'; return (tplMem[id] = { name: o.name, savedAt: o.savedAt, source: o.source, buf: b642ab(o.b64) }); } } catch (e) {}
+  return null;
+}
+async function tplDel(id) {
+  delete tplMem[id]; delete tplWhere[id];
+  try { localStorage.removeItem('stl.tpl.' + id); } catch (e) {}
+  try { const db = await idb(); await new Promise(res => { const tx = db.transaction('files', 'readwrite'); tx.objectStore('files').delete(id); tx.oncomplete = res; tx.onerror = res; }); } catch (e) {}
+}
+
+/* ═════════ 유틸 ═════════ */
+const $ = s => document.querySelector(s);
+const pad = n => String(n).padStart(2, '0');
+const daysIn = ym => { const [y, m] = ym.split('-').map(Number); return new Date(y, m, 0).getDate(); };
+const ymLabel = ym => { const [y, m] = ym.split('-'); return `${y}년 ${+m}월`; };
+const shiftYm = (ym, k) => { const [y, m] = ym.split('-').map(Number); const d = new Date(y, m - 1 + k, 1); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`; };
+const num = v => { if (v === '' || v == null) return null; const n = Number(String(v).replace(/[,\s원₩]/g, '')); return Number.isFinite(n) ? n : NaN; };
+const ok = v => v != null && !Number.isNaN(v);
+const r2 = x => Math.round((x + Number.EPSILON) * 100) / 100;
+const fmt = (v, dec = 2) => v == null || Number.isNaN(v) ? '—' : Number(v).toLocaleString('ko-KR', { maximumFractionDigits: dec });
+const won = v => v == null || Number.isNaN(v) ? '—' : fmt(v) + '원';
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const clone = o => o == null ? o : JSON.parse(JSON.stringify(o));
+const WD = ['일', '월', '화', '수', '목', '금', '토'];
+const yymmdd = () => { const d = new Date(); return pad(d.getFullYear() % 100) + pad(d.getMonth() + 1) + pad(d.getDate()); };
+function toast(msg) { const el = $('#toast'); el.textContent = msg; el.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('on'), 2600); }
+async function copyText(s) {
+  try { await navigator.clipboard.writeText(s); }
+  catch (e) { const ta = document.createElement('textarea'); ta.value = s; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
+  toast(`복사됨: ${s}`);
+}
+function download(name, blob) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500); }
+function unitPrice(s, D) { return s.priceMode === 'fixed' ? num(s.fixed) : num(s.days[D]); }
+
+/* ═════════ 계산·검증 ═════════ */
+function compute(t, ym, td) {
+  const s = getS(t.id), D = daysIn(ym);
+  const R = { D, s, amount: null, amountLabel: '정산액', lines: [], rows: [], errors: [], warnings: [], filled: 0, sums: {} };
+  const rows = td.rows || {}, ex = td.extra || {}, F = FIELDS[t.type], key = KEYF[t.type] || 'N';
+  const get = (d, k) => num(rows[d]?.[k]);
+  const list = a => { const u = [...new Set(a)]; return u.slice(0, 8).join(', ') + (u.length > 8 ? ` 외 ${u.length - 8}` : ''); };
+
+  let price = null, cpa = null, rsp = null;
+  if (t.type === 'rs') {
+    price = unitPrice(s, D);
+    if (price == null) R.errors.push(`${D}일 달의 단가가 등록되지 않았습니다. 아래 ‘단가·기준 설정’에서 입력하세요. (추정 계산하지 않음)`);
+    else if (Number.isNaN(price)) { R.errors.push('단가 형식이 올바르지 않습니다.'); price = null; }
+  }
+  if (t.type === 'ending') { cpa = num(s.cpa); rsp = num(s.rs); if (!ok(cpa) || !ok(rsp)) { R.errors.push('CPA 또는 RS 단가가 없습니다.'); cpa = rsp = null; } }
+  if (t.type === 'cloud') { const m = num(s.monthly); price = ok(m) ? r2(m / D) : null; if (price == null) R.errors.push('월 기준 금액이 없습니다.'); }
+
+  const sums = Object.fromEntries(F.map(k => [k, 0]));
+  const missing = [], bad = [], chain = [], sMiss = [], sBad = [], cpaNeg = [], zeroIn = [];
+  let sumAmt = 0, sumCpa = 0, sumRs = 0;
+  for (let d = 1; d <= D; d++) {
+    const row = { d, amt: null, price: null };
+    F.forEach(k => { row[k] = get(d, k); if (row[k] != null && (Number.isNaN(row[k]) || row[k] < 0)) bad.push(d); else if (ok(row[k])) sums[k] += row[k]; });
+    const { J, C, N, S } = row;
+    if (!ok(row[key])) missing.push(d); else R.filled++;
+    if (d > 1 && F.includes('J')) { const P = get(d - 1, 'N'); if (ok(P) && ok(N) && ok(J) && ok(C) && r2(P + J - C) !== N) chain.push(d); }
+    if (ok(J) && ok(C)) row.net = J - C;
+    if ((t.type === 'rs' || t.type === 'cloud') && ok(N) && price != null) { row.price = price; row.amt = r2(N * price); sumAmt += row.amt; }
+    if (t.type === 'ending') {
+      if (ok(J) && !ok(S)) sMiss.push(d);
+      if (ok(S) && ((ok(J) && S > J) || (ok(C) && S > C))) sBad.push(d);
+      if (ok(C) && ok(S)) row.late = C - S;
+      if (cpa != null) {
+        row.cpa = ok(J) && ok(S) ? (J - S) * cpa : null;
+        row.rs = ok(N) ? r2(N * rsp) : null;
+        if (row.cpa != null) { sumCpa += row.cpa; if (row.cpa < 0) cpaNeg.push(d); }
+        if (row.rs != null) sumRs += row.rs;
+        if (row.cpa != null || row.rs != null) row.amt = r2((row.cpa || 0) + (row.rs || 0));
+      }
+    }
+    if (t.type === 'diet') { row.rate = ok(row.inflow) && row.inflow > 0 && ok(row.done) ? row.done / row.inflow : null; if (row.inflow === 0 && row.done > 0) zeroIn.push(d); }
+    R.rows.push(row);
+  }
+  Object.assign(R.sums, sums, { amt: r2(sumAmt), cpa: sumCpa, rs: r2(sumRs), price });
+  if (bad.length) R.errors.push(`숫자가 아니거나 음수인 값이 있습니다: ${list(bad)}일`);
+  if (t.type !== 'finq' && missing.length) R.errors.push(`${D}일 중 ${missing.length}일의 ${label(t, key)}이 비어 있습니다: ${list(missing)}일`);
+  if (chain.length) R.warnings.push(`전일 누적 + 가입 − 해지 ≠ 당일 누적: ${list(chain)}일 (보정값이면 무시 가능, 자동 수정하지 않음)`);
+
+  if (t.type === 'rs') {
+    if (!R.errors.length) R.amount = r2(sumAmt);
+    R.lines.push(['이용자-일 합계', fmt(sums.N)], ['가입 / 해지 합계', `${fmt(sums.J)} / ${fmt(sums.C)}`],
+      [`적용 단가 (${D}일 달${s.priceMode === 'fixed' ? ', 고정' : ''})`, price == null ? '미등록' : won(price)]);
+  }
+  if (t.type === 'ending') {
+    if (sMiss.length) R.errors.push(`가입수는 있는데 당일해지가 빈 날: ${list(sMiss)}일 — CPA 계산 보류`);
+    if (sBad.length) R.warnings.push(`당일해지가 가입수 또는 해지수보다 큰 날: ${list(sBad)}일`);
+    if (cpaNeg.length) R.warnings.push(`CPA가 음수인 날: ${list(cpaNeg)}일 (0으로 보정하지 않음)`);
+    if (!R.errors.length) R.amount = r2(sumCpa + sumRs);
+    R.lines.push([`CPA 대상 (가입 ${fmt(sums.J)} − 당일해지 ${fmt(sums.S)})`, fmt(sums.J - sums.S) + '건'], [`CPA 소계 (× ${fmt(cpa)})`, won(sumCpa)],
+      [`RS 이용자-일 ${fmt(sums.N)} × ${fmt(rsp)}`, won(r2(sumRs))], ['지연해지 (해지 − 당일해지)', fmt(sums.C - sums.S) + '건']);
+  }
+  if (t.type === 'cloud') {
+    const cd = num(ex.ctnDays), ca = num(ex.ctnAmt);
+    if (!R.errors.length) R.amount = r2(sumAmt);
+    R.lines.push(['유료 이용일수 합계', fmt(sums.N) + '일'], [`일 단가 ROUND(${fmt(num(s.monthly))} ÷ ${D}, 2)`, won(price)]);
+    if (cd == null && ca == null) R.warnings.push('CTN 대조값(이용일수·금액)을 입력하지 않았습니다.');
+    if (cd != null) { R.lines.push(['CTN 이용일수', fmt(cd) + '일']); if (cd !== sums.N) R.errors.push(`CTN 이용일수 ${fmt(cd)}일 ≠ 일별 합계 ${fmt(sums.N)}일 (차이 ${fmt(sums.N - cd)}일)`); }
+    if (ca != null) { R.lines.push(['CTN 금액 합계', won(ca)]); if (Math.abs(ca - r2(sumAmt)) >= 0.01) R.errors.push(`CTN 금액 ${won(ca)} ≠ 계산 금액 ${won(r2(sumAmt))} (차이 ${won(r2(sumAmt - ca))})`); }
+    if (cd != null && ca != null && !R.errors.length) R.ok = 'CTN 이용일수·단가·금액 대조 일치';
+    const cs = ex.cloudSrc;
+    if (cs) {
+      const dc = Object.keys(cs.daily || {}), cc = Object.keys(cs.ctn || {});
+      const badP = dc.filter(c => (cs.daily[c].prices || []).some(p => price != null && Math.abs(p - price) > 1e-9));
+      if (badP.length) R.warnings.push(`일자별 파일의 일단가가 ROUND(500÷${D},2)=${price}원과 다릅니다: ${badP.join(', ')}`);
+      const dup = dc.filter(c => cs.daily[c].dup); if (dup.length) R.warnings.push(`일자별 파일에 같은 날짜가 두 번 있습니다(나중 값 사용): ${dup.join(', ')}`);
+      const onlyD = dc.filter(c => !cc.includes(c)), onlyC = cc.filter(c => !dc.includes(c));
+      if (onlyD.length) R.warnings.push(`CTN 파일이 없는 통신사: ${onlyD.join(', ')}`);
+      if (onlyC.length) R.warnings.push(`일자별 파일이 없는 통신사: ${onlyC.join(', ')}`);
+      if (dc.length > 1) R.lines.push(['통신사별 합산', dc.join(' + ')]);
+    }
+  }
+  if (t.type === 'finq') {
+    const unit = num(s.unit), th = num(s.threshold), last = get(D, 'N');
+    if (!ok(last)) R.errors.push(`말일(${D}일) 가입누적이 없습니다. 전날 값으로 대체하지 않습니다.`);
+    const accrual = ok(last) && unit != null ? last * unit : null;
+    const carry = num(ex.carry), paid = num(ex.paid) || 0;
+    if (carry == null) R.warnings.push('전월 이월액이 비어 있습니다. 0원이 맞는지 확인하세요.');
+    const bal = (carry || 0) + (accrual || 0), payable = th != null && bal >= th;
+    R.amountLabel = '당월 발생액';
+    if (!R.errors.length) R.amount = accrual;
+    Object.assign(R.sums, { last, unit, accrual, carry, paid, bal, after: bal - paid, th, payable });
+    R.lines.push([`말일 가입누적 × ${fmt(unit)}원`, `${fmt(last)} × ${fmt(unit)}`], ['전월 이월액', carry == null ? '미입력' : won(carry)],
+      ['누적 잔액 (이월 + 발생)', won(bal)], [`지급 기준 ${won(th)}`, payable ? '지급 대상' : '지급 대기 (이월)'],
+      ['당월 지급 처리액', won(paid)], ['익월 이월 잔액', won(bal - paid)]);
+  }
+  if (t.type === 'diet') {
+    const base = num(s.base), t35 = num(s.t35), t6 = num(s.t6);
+    [['기본급', base], ['3~5회 단가', t35], ['6회 이상 단가', t6]].forEach(([n, v]) => { if (!ok(v)) R.errors.push(`${n}가 설정되지 않았습니다.`); });
+    if (zeroIn.length) R.warnings.push(`상담 인입이 0건인데 완료가 있는 날: ${list(zeroIn)}일`);
+    const inc35 = sums.a35 * (t35 || 0), inc6 = sums.a6 * (t6 || 0), supply = (base || 0) + inc35 + inc6, vat = s.vat ? Math.round(supply * 0.1) : 0;
+    if (!R.errors.length) R.amount = supply + vat;
+    R.amountLabel = s.vat ? '실지급액 (부가세 포함)' : '지급액';
+    Object.assign(R.sums, { base, t35, t6, inc35, inc6, supply, vat });
+    R.lines.push(['기본급', won(base)], [`3~5회차 ${fmt(sums.a35)}회 × ${fmt(t35)}`, won(inc35)], [`6회 이상 ${fmt(sums.a6)}회 × ${fmt(t6)}`, won(inc6)],
+      ['지급액 (공급가)', won(supply)], ['부가세', s.vat ? won(vat) : '해당 없음'], ['1~2회차 합계 (인센티브 제외)', fmt(sums.a12) + '회'],
+      ['상담누적 / 인입', `${fmt(sums.done)} / ${fmt(sums.inflow)}`]);
+    if (sums.inflow > 0) R.lines.push(['월 당일완료율', fmt(sums.done / sums.inflow * 100, 1) + '%']);
+  }
+  return R;
+}
+function statusOf(t, td, R) {
+  const n = GROUPS[t.group].steps.length, done = (td.checks || []).slice(0, n).filter(Boolean).length;
+  if (done === n) return R.errors.length ? { k: 'err', label: '검증 오류', done, n } : { k: 'done', label: '완료', done, n };
+  if (done > 0 || R.filled > 0) return { k: 'prog', label: '진행 중', done, n };
+  return { k: 'todo', label: '미착수', done, n };
+}
+
+/* ═════════ 상태 ═════════ */
+const now = new Date();
+const curYm = `${now.getFullYear()}-${pad(now.getMonth() + 1)}`;
+const state = { ym: store.get('stl.lastYm', shiftYm(curYm, -1)), view: store.get('stl.lastView', 'dash'), md: {}, notes: {} };
+function loadMonth() { state.md = JSON.parse(JSON.stringify(store.get(monthKey(state.ym), {}))); }
+
+/* ═════════ 화면 ═════════ */
+function renderHeader() {
+  $('#month').value = state.ym;
+  const D = daysIn(state.ym);
+  const chips = [`${ymLabel(state.ym)}`, `월 일수 ${D}일 (말일 ${D}일)`, `조회 ${state.ym}-01 ~ ${state.ym}-${pad(D)}`];
+  $('#monthInfo').innerHTML = chips.map(c => `<span class="chip">${c}</span>`).join('') +
+    (state.ym >= curYm ? `<span class="chip warn">${state.ym > curYm ? '미래 월' : '진행 중인 월 · 잠정 집계'}</span>` : '');
+}
+function renderNav() {
+  let h = `<button class="navitem ${state.view === 'dash' ? 'on' : ''}" data-open="dash">▦ 월 정산 현황</button>`;
+  for (const [gk, g] of Object.entries(GROUPS)) {
+    h += `<div class="navgroup">${esc(g.name)}</div>`;
+    TARGETS.filter(t => t.group === gk).forEach(t => {
+      const td = tdata(t.id), st = statusOf(t, td, compute(t, state.ym, td));
+      h += `<button class="navitem ${state.view === t.id ? 'on' : ''}" data-open="${t.id}"><span class="dot ${st.k}"></span>${esc(t.name)}</button>`;
+    });
+  }
+  $('#nav').innerHTML = h;
+}
+function renderMain() {
+  if (state.view === 'dash') { $('#main').innerHTML = viewDash(); renderDashTpl(); }
+  else { const t = T[state.view]; $('#main').innerHTML = viewTarget(t); renderTplCard(t); }
+}
+function renderAll() { renderHeader(); renderNav(); renderMain(); }
+
+function viewDash() {
+  const D = daysIn(state.ym);
+  let done = 0, errs = 0, rows = '';
+  TARGETS.forEach(t => {
+    const td = tdata(t.id), R = compute(t, state.ym, td), st = statusOf(t, td, R), g = GROUPS[t.group];
+    if (st.k === 'done') done++;
+    if (R.errors.length && (R.filled || st.done)) errs++;
+    const v = !R.filled && !st.done ? '<span class="help">—</span>' :
+      R.errors.length ? `<span class="badge err">오류 ${R.errors.length}</span>` : R.warnings.length ? `<span class="badge prog">경고 ${R.warnings.length}</span>` : '<span class="badge done">통과</span>';
+    rows += `<tr data-open="${t.id}"><td>${esc(g.name)}</td><td><b>${esc(t.name)}</b></td><td>${st.done}/${st.n}</td><td class="n">${R.filled}/${D}</td><td>${v}</td>
+      <td class="n">${R.amount == null ? '—' : won(R.amount)}${t.type === 'finq' && R.filled ? `<div class="help">${R.sums.payable ? '지급 대상' : '이월'}</div>` : ''}</td>
+      <td id="dt-${t.id}"><span class="help">…</span></td><td><span class="badge ${st.k}">${st.label}</span></td></tr>`;
+  });
+  return `
+  <div class="titlebar"><h2>${ymLabel(state.ym)} 정산 현황</h2><div class="grow"></div>
+    <label class="btn ghost" title="02_정산 폴더의 지난달 엑셀 여러 개를 한 번에 선택하면 파일 이름으로 대상을 찾아 등록합니다">기존 양식 한꺼번에 등록<input type="file" accept=".xlsx" multiple hidden data-tplbulk></label>
+    <button class="btn" data-act="tplAll">기존 양식 Excel 전체 받기</button><button class="btn ghost" data-act="xlsxAll">요약 Excel</button><button class="btn ghost" data-act="printDash">현황 PDF/인쇄</button></div>
+  <div class="stats">
+    <div class="stat"><span>완료</span><b>${done} / ${TARGETS.length}</b></div>
+    <div class="stat"><span>검증 오류가 있는 대상</span><b style="color:${errs ? 'var(--err)' : 'inherit'}">${errs}</b></div>
+    <div class="stat"><span>조회 기간</span><b style="font-size:15px">${state.ym}-01 ~ ${state.ym}-${pad(D)}</b></div>
+    <div class="stat"><span>말일 기준 단가 적용</span><b>${D}일 달</b></div>
+  </div>
+  <section class="card"><h3>대상별 진행 <small>행을 누르면 작업 화면으로 이동합니다</small></h3>
+    <div class="tw"><table class="dash click"><thead><tr><th>서비스</th><th>정산 대상</th><th>체크리스트</th><th style="text-align:right">입력 일수</th><th>검증</th><th style="text-align:right">금액</th><th>출력 양식</th><th>상태</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <p class="help">금액은 대상마다 세금 기준이 달라 단순 합산하지 않습니다. 핀크는 당월 발생액, 식단코치는 부가세 포함 실지급액입니다.</p>
+  </section>
+  <div class="grid2">
+    <section class="card"><h3>바로가기</h3>
+      <div class="btnrow"><a class="btn ghost" href="${OCEAN_URL}" target="_blank" rel="noopener">오션 관리자 ↗</a><a class="btn ghost" href="${WISE_URL}" target="_blank" rel="noopener">와이즈 파트너스 ↗</a></div>
+      <p class="help" style="margin-top:10px">오션: 헬스케어 &gt; 제휴광고 &gt; 정산리포트 · 헬스케어 &gt; 집계관리 &gt; 서비스 이용 데이터<br>와이즈: 제휴광고 &gt; 정산리포트</p></section>
+    <section class="card"><h3>일정 메모</h3><ul class="plain">
+      <li>정산 작업은 매월 첫 영업일에 시작</li>
+      <li>제이엠·드리미 정산서는 매월 8일 전 공유</li>
+      <li>핀크는 누적 10만 원 이상일 때 지급, 미만은 이월</li>
+      <li>안심클라우드는 월 확정 후 분기 단위로 지급 현황 관리</li></ul></section>
+  </div>`;
+}
+async function renderDashTpl() {
+  for (const t of TARGETS) {
+    const rec = await tplGet(t.id), el = document.getElementById('dt-' + t.id);
+    if (el) el.innerHTML = rec ? `<span class="badge done">기존 양식</span>${tplWhere[t.id] === 'mem' ? ' <span class="badge prog">임시</span>' : ''}` : '<span class="badge prog">미등록</span>';
+  }
+}
+
+function viewTarget(t) {
+  const g = GROUPS[t.group], td = tdata(t.id), R = compute(t, state.ym, td), st = statusOf(t, td, R), s = R.s, D = R.D;
+  const first = `${state.ym}-01`, last = `${state.ym}-${pad(D)}`;
+  const copies = [['정산월', `${state.ym.replace('-', '년 ')}월`, state.ym], ['조회 시작일', first, first], ['조회 종료일', last, last]];
+  if (s.eventId) copies.unshift(['이벤트 ID', s.eventId, s.eventId]);
+  const checks = g.steps.map((txt, i) => `<li><label><input type="checkbox" data-check="${i}" ${td.checks[i] ? 'checked' : ''}><span>${esc(txt)}</span></label></li>`).join('');
+  return `
+  <div class="crumb">${esc(g.name)}</div>
+  <div class="titlebar"><h2>${esc(t.name)}</h2><span class="badge ${st.k}" id="stBadge">${st.label}</span><div class="grow"></div>
+    ${g.url ? `<a class="btn" href="${g.url}" target="_blank" rel="noopener">${esc(g.system)} 열기 ↗</a>` : ''}</div>
+  <div class="copyrow">${copies.map(([k, v, c]) => `<button class="copy" data-copy="${esc(c)}">${k} <b>${esc(v)}</b> ⧉</button>`).join('')}
+    ${!s.eventId && (t.group === 'hc' || t.group === 'wise') ? '<span class="help" style="align-self:center">이벤트 ID는 아래 설정에 등록하면 복사 버튼이 생깁니다.</span>' : ''}</div>
+  <div class="note">${esc(t.note)}</div>
+  <div class="grid2">
+    <section class="card"><h3>업무 체크리스트 <small>${st.done}/${st.n}</small></h3>
+      <div class="progress"><i style="width:${st.done / st.n * 100}%"></i></div><ol class="checks">${checks}</ol></section>
+    <section class="card" id="summary">${summaryHTML(t, R)}</section>
+  </div>
+  ${dailySection(t, td, R)}
+  ${t.type === 'finq' ? finqSection(t, td) : ''}
+  ${t.type === 'cloud' ? cloudSection(t, td) : ''}
+  <section class="card" id="tplCard"><h3>기존 양식으로 출력</h3><p class="help">불러오는 중…</p></section>
+  ${settingsSection(t, s)}
+  <section class="card"><h3>메모 <small>이 달의 특이사항·보정 사유</small></h3><textarea class="memo" data-memo placeholder="예) 8/15 누적 보정 — 관리자 보정값 반영">${esc(td.memo)}</textarea></section>`;
+}
+function summaryHTML(t, R) {
+  const msgs = [...R.errors.map(m => `<li class="e">⛔ ${esc(m)}</li>`), ...R.warnings.map(m => `<li class="w">⚠ ${esc(m)}</li>`)];
+  if (R.ok) msgs.push(`<li class="o">✓ ${esc(R.ok)}</li>`);
+  if (!msgs.length && R.filled) msgs.push('<li class="o">✓ 검증 통과</li>');
+  return `<h3>${esc(R.amountLabel)}</h3>
+    <div class="amount">${R.amount == null ? '—' : fmt(R.amount)}<small>${R.amount == null ? (R.filled ? '검증 오류로 보류' : '데이터 입력 전') : '원'}</small></div>
+    <dl class="lines">${R.lines.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
+    <ul class="msgs">${msgs.join('')}</ul>
+    <div class="btnrow"><button class="btn" data-act="xlsx">Excel 받기</button><button class="btn ghost" data-act="pdf">PDF 저장 / 인쇄</button><span class="help" id="tplHint"></span></div>`;
+}
+const EXT_COLS = {
+  rs: [['price', '단가'], ['amt', '일 정산액']], cloud: [['price', '단가'], ['amt', '일 정산액']],
+  ending: [['cpa', 'CPA'], ['rs', 'RS'], ['amt', '일 합계']], finq: [], diet: [['rate', '당일완료율']]
+};
+const extFmt = (k, v) => k === 'rate' ? (v == null ? '—' : fmt(v * 100, 1) + '%') : fmt(v);
+function dailySection(t, td, R) {
+  const f = FIELDS[t.type], s = R.s, [y, m] = state.ym.split('-').map(Number), ext = EXT_COLS[t.type];
+  const body = R.rows.map(r => {
+    const wd = new Date(y, m - 1, r.d).getDay(), raw = td.rows[r.d] || {};
+    const cells = f.map(k => `<td><input inputmode="decimal" data-d="${r.d}" data-k="${k}" value="${esc(raw[k] ?? '')}"></td>`).join('');
+    return `<tr id="row${r.d}" class="${wd === 0 || wd === 6 ? 'wk' : ''} ${r[KEYF[t.type] || 'N'] == null ? 'miss' : ''}"><td>${m}/${pad(r.d)}<span class="wd">${WD[wd]}</span>${t.type === 'finq' && r.d === R.D ? ' <span class="badge prog">말일</span>' : ''}</td>${cells}${ext.map(([k]) => `<td id="x${k}${r.d}">${extFmt(k, r[k])}</td>`).join('')}</tr>`;
+  }).join('');
+  const opts = v => `<option value="0" ${!v ? 'selected' : ''}>사용 안 함</option>` + Array.from({ length: 10 }, (_, i) => `<option value="${i + 1}" ${+v === i + 1 ? 'selected' : ''}>${i + 1}번째 열</option>`).join('');
+  return `<section class="card"><h3>일별 데이터 <small id="filledCnt">${R.filled}/${R.D}일 입력</small></h3>
+    <div class="paste">
+      <div><textarea id="pasteBox" placeholder="관리자 화면(또는 다운로드한 엑셀)의 표를 드래그해 복사(Ctrl+C) 후 여기에 붙여넣기(Ctrl+V)&#10;예) 2026-08-01	12	3	1,204&#10;날짜가 있으면 날짜로, 없으면 1일부터 순서대로 채웁니다. 머리글 행은 자동으로 건너뜁니다."></textarea></div>
+      <div class="mapbox"><b>열 순서 <span class="help">(날짜 열 제외)</span></b>
+        ${f.map(k => `<div class="row"><span>${label(t, k)}</span><select data-map="${k}">${opts(s.map[k])}</select></div>`).join('')}
+        <div class="btnrow" style="margin-top:6px"><button class="btn sm" data-act="paste">표에 반영</button><button class="btn danger sm" data-act="clear">표 비우기</button></div>
+      </div>
+    </div>
+    <div class="tablewrap"><table class="g"><thead><tr><th>날짜</th>${f.map(k => `<th>${label(t, k)}</th>`).join('')}${ext.map(([, l]) => `<th>${l}</th>`).join('')}</tr></thead>
+      <tbody>${body}</tbody><tfoot id="tfoot">${tfootHTML(t, R)}</tfoot></table></div>
+    <p class="help">셀을 직접 수정해도 즉시 계산됩니다(Enter·↑↓로 이동). 비어 있는 날은 0으로 채우지 않고 ‘미입력’으로 봅니다(실제 0건이면 0 입력).</p></section>`;
+}
+function tfootHTML(t, R) {
+  const S = R.sums, extSum = { price: '', amt: fmt(S.amt), cpa: fmt(S.cpa), rs: fmt(S.rs), rate: S.inflow > 0 ? fmt(S.done / S.inflow * 100, 1) + '%' : '—' };
+  if (t.type === 'ending') extSum.amt = fmt(r2((S.cpa || 0) + (S.rs || 0)));
+  return `<tr><td>합계</td>${FIELDS[t.type].map(k => `<td>${fmt(S[k])}</td>`).join('')}${EXT_COLS[t.type].map(([k]) => `<td>${extSum[k]}</td>`).join('')}</tr>`;
+}
+function finqSection(t, td) {
+  const e = td.extra, prev = shiftYm(state.ym, -1), ptd = tdataOf(prev, t.id);
+  const pR = compute(t, prev, ptd), pAfter = pR.sums.after;
+  const hasPrev = pR.filled > 0 || ptd.extra?.carry != null;
+  return `<section class="card"><h3>이월·지급 관리</h3>
+    <div class="form">
+      <label>전월 이월액 (원)<input inputmode="decimal" data-extra="carry" value="${esc(e.carry ?? '')}"></label>
+      <label>당월 지급 처리액 (원)<input inputmode="decimal" data-extra="paid" value="${esc(e.paid ?? '')}"></label>
+      <label>지급일 / 비고<input style="text-align:left" data-extra="paidNote" value="${esc(e.paidNote ?? '')}"></label>
+    </div>
+    <div class="btnrow" style="margin-top:10px">${hasPrev ? `<button class="btn ghost sm" data-act="loadCarry" data-v="${pAfter}">전월(${ymLabel(prev)}) 잔액 ${won(pAfter)} 불러오기</button>` : `<span class="help">${ymLabel(prev)} 데이터가 이 도구에 없어 기존 엑셀의 잔액을 직접 입력하세요.</span>`}</div>
+    <p class="help">지급 처리액은 실제로 지급한 금액만 입력합니다. 파일 생성만으로 이월액을 소멸시키지 않습니다.</p></section>`;
+}
+function cloudSection(t, td) {
+  const e = td.extra, [y, m] = state.ym.split('-').map(Number), q = Math.ceil(m / 3);
+  const months = [0, 1, 2].map(i => `${y}-${pad((q - 1) * 3 + 1 + i)}`);
+  const rows = months.map(ym => {
+    const d = ym === state.ym ? td : tdataOf(ym, t.id), R = compute(t, ym, d), st = statusOf(t, d, R);
+    return `<tr><td>${ymLabel(ym)}</td><td class="n">${R.filled ? won(R.amount ?? R.sums.amt) : '—'}</td><td><span class="badge ${st.k}">${st.label}</span></td></tr>`;
+  }).join('');
+  const inp = (k, l) => `<label>${l}<input inputmode="decimal" data-extra="${k}" value="${esc(e[k] ?? '')}"></label>`;
+  const src = e.cloudSrc || { daily: {}, ctn: {} }, D = daysIn(state.ym);
+  const cars = [...new Set([...Object.keys(src.daily || {}), ...Object.keys(src.ctn || {})])].sort();
+  let tD = 0, tN = 0, tA = 0, tC = 0, tCd = 0, tCa = 0;
+  const carRows = cars.map(c => {
+    const dl = src.daily[c], ct = src.ctn[c];
+    const dn = dl ? Object.values(dl.days).reduce((a, b) => a + (b || 0), 0) : null, dd = dl ? Object.keys(dl.days).length : 0;
+    if (dl) { tD = Math.max(tD, dd); tN += dn; tA += dl.amt || 0; } if (ct) { tC += ct.count; tCd += ct.days; tCa += ct.amt; }
+    const match = dl && ct ? (dn === ct.days ? '<span class="badge done">일치</span>' : `<span class="badge err">차이 ${fmt(dn - ct.days)}일</span>`) : '<span class="badge prog">파일 부족</span>';
+    return `<tr><td><b>${esc(c)}</b></td>
+      <td>${dl ? `${dd}/${D}일 · 가입자-일 ${fmt(dn)} · ${won(dl.amt)}<div class="help">${esc(dl.file)}</div>` : '<span class="help">없음</span>'}</td>
+      <td>${ct ? `${fmt(ct.count)}명 · 총유료일수 ${fmt(ct.days)} · ${won(ct.amt)}<div class="help">${esc(ct.file)}</div>` : '<span class="help">없음</span>'}</td><td>${match}</td></tr>`;
+  }).join('');
+  const total = cars.length > 1 ? `<tr><td><b>합계</b></td><td>가입자-일 ${fmt(tN)} · ${won(r2(tA))}</td><td>${fmt(tC)}명 · 총유료일수 ${fmt(tCd)} · ${won(r2(tCa))}</td><td>${tN === tCd ? '<span class="badge done">일치</span>' : `<span class="badge err">차이 ${fmt(tN - tCd)}일</span>`}</td></tr>` : '';
+  return `<section class="card"><h3>원천 파일 <small>일자별 가입자 · CTN · 통신사별 여러 개 가능</small></h3>
+      <div class="btnrow"><label class="btn">원천 엑셀 불러오기<input type="file" accept=".xlsx,.xls" multiple hidden data-cloudsrc></label>${cars.length ? '<button class="btn danger sm" data-act="cloudClear">원천 파일 비우기</button>' : ''}</div>
+      <p class="help" style="margin:8px 0">‘웹하드 정산 목록’(일자별)과 ‘웹하드 정산 사용자 목록_CTN’ 파일을 <b>한꺼번에</b> 선택하세요(LGU+·SKT 등 여러 개 가능). 파일 종류와 통신사는 자동으로 구분합니다. 일자별은 날짜별로 <b>합산</b>해 아래 일별 표에, CTN은 <b>이어 붙여</b> 대조와 기존 양식의 CTN 증빙 시트에 씁니다. 같은 통신사 파일을 다시 넣으면 그 통신사만 교체됩니다.</p>
+      ${cars.length ? `<div class="tw"><table class="maptbl"><thead><tr><th>통신사</th><th>일자별 가입자</th><th>CTN</th><th>일수 대조</th></tr></thead><tbody>${carRows}${total}</tbody></table></div>` : ''}
+      <details class="sub"><summary>CTN 합계 직접 입력</summary><div class="form">${inp('ctnDays', 'CTN 유료 이용일수 합계')}${inp('ctnAmt', 'CTN 금액 합계 (원)')}</div>
+        <p class="help">원천 파일을 불러오면 자동으로 채워집니다.</p></details></section>
+    <section class="card"><h3>${y}년 ${q}분기 현황</h3><table class="dash"><tbody>${rows}</tbody></table>
+      <p class="help">체크리스트를 모두 마치고 검증이 통과된 달만 ‘완료’로 표시됩니다. 미완료 달이 있으면 분기 합계는 잠정입니다.</p></section>`;
+}
+
+/* ═════════ 안심클라우드 원천 파일 (일자별 가입자 · CTN, 통신사별 여러 개) ═════════ */
+const ctnMem = {};
+async function ctnPut(ym, obj) {
+  ctnMem[ym] = obj;
+  try { const db = await idb(); await new Promise((res, rej) => { const tx = db.transaction('files', 'readwrite'); tx.objectStore('files').put(obj, 'ctn:' + ym); tx.oncomplete = res; tx.onerror = () => rej(tx.error); }); try { localStorage.removeItem('stl.ctn.' + ym); } catch (e) {} return 'idb'; } catch (e) {}
+  try { localStorage.setItem('stl.ctn.' + ym, JSON.stringify(obj)); return 'ls'; } catch (e) { return 'mem'; }
+}
+async function ctnGet(ym) {
+  if (ctnMem[ym]) return ctnMem[ym];
+  try { const v = await idbGet(await idb(), 'ctn:' + ym); if (v) return (ctnMem[ym] = v); } catch (e) {}
+  try { const raw = localStorage.getItem('stl.ctn.' + ym); if (raw) return (ctnMem[ym] = JSON.parse(raw)); } catch (e) {}
+  return null;
+}
+function monthOf(v) {
+  if (typeof v === 'number') { const d = dateOf(v); return d ? `${d.y}-${pad(d.m)}` : ''; }
+  if (v instanceof Date) return `${v.getUTCFullYear()}-${pad(v.getUTCMonth() + 1)}`;
+  const m = String(v ?? '').match(/(\d{4})\D*(\d{1,2})/); return m ? `${m[1]}-${pad(+m[2])}` : '';
+}
+async function parseCloudFile(file) {
+  if (typeof XLSX === 'undefined') throw new Error('엑셀 라이브러리를 불러오지 못했습니다 (인터넷 연결 확인).');
+  const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' }), out = [];
+  for (const name of wb.SheetNames) {
+    const aoa = XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1, raw: true, defval: null });
+    const hi = aoa.findIndex(r => r && r.some(v => String(v ?? '').replace(/\s/g, '') === '통신사'));
+    if (hi < 0) continue;
+    const H = aoa[hi].map(v => String(v ?? '').replace(/\s/g, '')), col = re => H.findIndex(h => re.test(h));
+    const car = col(/^통신사$/);
+    if (col(/^CTN$/i) >= 0 && col(/유료일수/) >= 0) {
+      const ix = { m: col(/정산월/), ctn: col(/^CTN$/i), key: col(/패스키|PASSKEY/i), days: col(/유료일수/), amt: col(/정산금액|금액/) };
+      const rows = aoa.slice(hi + 1).filter(r => r && r[ix.ctn] != null && r[ix.ctn] !== '')
+        .map(r => [monthOf(r[ix.m]), String(r[car] ?? '').trim(), String(r[ix.ctn]), ix.key >= 0 ? String(r[ix.key] ?? '') : '', num(r[ix.days]) || 0, ix.amt >= 0 ? num(r[ix.amt]) : null]);
+      out.push({ kind: 'ctn', rows });
+    } else if (col(/정산일|일자|날짜/) >= 0 && col(/가입자/) >= 0) {
+      const ix = { d: col(/정산일|일자|날짜/), n: col(/가입자/), price: col(/단가/), amt: col(/정산금액|금액/) };
+      const rows = aoa.slice(hi + 1).filter(r => r && r[ix.d] != null && r[ix.d] !== '')
+        .map(r => ({ date: dateOf(r[ix.d]), car: String(r[car] ?? '').trim(), n: num(r[ix.n]), price: ix.price >= 0 ? num(r[ix.price]) : null, amt: ix.amt >= 0 ? num(r[ix.amt]) : null }));
+      out.push({ kind: 'daily', rows });
+    }
+  }
+  return out;
+}
+function applyCloudSrc(td, src, D) {
+  const cars = Object.keys(src.daily);
+  if (cars.length) {
+    td.rows = {};
+    for (let d = 1; d <= D; d++) { const vals = cars.map(c => src.daily[c].days[d]).filter(v => v != null && !Number.isNaN(v)); if (vals.length === cars.length) td.rows[d] = { N: String(vals.reduce((a, b) => a + b, 0)) }; }
+  }
+  const cc = Object.values(src.ctn);
+  if (cc.length) { td.extra.ctnDays = String(cc.reduce((a, x) => a + x.days, 0)); td.extra.ctnAmt = String(r2(cc.reduce((a, x) => a + (x.amt || 0), 0))); }
+  else { delete td.extra.ctnDays; delete td.extra.ctnAmt; }
+}
+async function importCloudFiles(t, files) {
+  const ym = state.ym, [Y, M] = ym.split('-').map(Number), D = daysIn(ym), td = tdata(t.id);
+  const src = td.extra.cloudSrc || { daily: {}, ctn: {} }, ctn = (await ctnGet(ym)) || {}, log = [];
+  for (const f of files) {
+    let parts; try { parts = await parseCloudFile(f); } catch (e) { log.push(`✗ ${f.name}: ${e.message || e}`); continue; }
+    if (!parts.length) { log.push(`✗ ${f.name}: 일자별(정산일·통신사·유료가입자수) 또는 CTN(정산월·통신사·CTN·총유료일수) 형식이 아닙니다.`); continue; }
+    for (const p of parts) {
+      const byCar = {}; let other = 0;
+      if (p.kind === 'daily') {
+        p.rows.forEach(r => { if (!r.date) return; if (r.date.y !== Y || r.date.m !== M) { other++; return; }
+          const b = (byCar[r.car || '미상'] ||= { days: {}, prices: [], amt: 0, dup: 0 });
+          if (b.days[r.date.d] != null) b.dup++; b.days[r.date.d] = r.n; if (r.price != null && !b.prices.includes(r.price)) b.prices.push(r.price); b.amt += r.amt || 0; });
+        for (const [c, b] of Object.entries(byCar)) { src.daily[c] = { file: f.name, days: b.days, prices: b.prices, amt: r2(b.amt), dup: b.dup }; log.push(`✓ 일자별 ${c} ← ${f.name} (${Object.keys(b.days).length}일${b.dup ? `, 중복 날짜 ${b.dup}건` : ''})`); }
+      } else {
+        p.rows.forEach(r => { if (r[0] !== ym) { other++; return; } (byCar[r[1] || '미상'] ||= []).push(r); });
+        for (const [c, rows] of Object.entries(byCar)) { ctn[c] = { file: f.name, rows }; src.ctn[c] = { file: f.name, count: rows.length, days: rows.reduce((a, r) => a + (r[4] || 0), 0), amt: r2(rows.reduce((a, r) => a + (r[5] || 0), 0)) }; log.push(`✓ CTN ${c} ← ${f.name} (${rows.length.toLocaleString()}명)`); }
+      }
+      if (!Object.keys(byCar).length) log.push(`✗ ${f.name}: ${ymLabel(ym)} 데이터가 없습니다${other ? ` (다른 달 ${other}행)` : ''}. 상단 정산월을 확인하세요.`);
+      else if (other) log.push(`   └ 다른 달 ${other}행은 제외`);
+    }
+  }
+  applyCloudSrc(td, src, D); td.extra.cloudSrc = src; saveMonth();
+  const where = Object.keys(ctn).length ? await ctnPut(ym, ctn) : null;
+  alert(`${ymLabel(ym)} 안심클라우드 원천 파일\n\n${log.join('\n')}${where === 'mem' ? '\n\n⚠ CTN 목록을 브라우저에 저장하지 못했습니다. 이 창을 닫으면 다시 불러와야 합니다.' : ''}`);
+  renderMain(); renderNav();
+}
+function settingsSection(t, s) {
+  const inp = (k, l, v, al) => `<label>${l}<input data-set="${k}" value="${esc(v ?? '')}" ${al ? 'style="text-align:left"' : 'inputmode="decimal"'}></label>`;
+  let h = t.group === 'hc' || t.group === 'wise' ? inp('eventId', '이벤트 ID', s.eventId, 1) : '';
+  if (t.type === 'rs') {
+    h += `<label>단가 방식<select data-set="priceMode"><option value="fixed" ${s.priceMode === 'fixed' ? 'selected' : ''}>고정 단가</option><option value="days" ${s.priceMode === 'days' ? 'selected' : ''}>월 일수별 단가</option></select></label>`;
+    h += s.priceMode === 'fixed' ? inp('fixed', '일 단가 (원)', s.fixed) : [28, 29, 30, 31].map(d => inp('days.' + d, `${d}일 달 단가 (원)`, s.days[d])).join('');
+  }
+  if (t.type === 'ending') h += inp('cpa', 'CPA 단가 (원)', s.cpa) + inp('rs', 'RS 일 단가 (원)', s.rs);
+  if (t.type === 'finq') h += inp('unit', '가입자당 단가 (원)', s.unit) + inp('threshold', '지급 기준 금액 (원)', s.threshold);
+  if (t.type === 'cloud') h += inp('monthly', '월 기준 금액 (원, ÷ 일수)', s.monthly);
+  if (t.type === 'diet') h += inp('base', '기본급 (원)', s.base) + inp('t35', '3~5회차 단가 (원)', s.t35) + inp('t6', '6회 이상 단가 (원)', s.t6) +
+    `<label class="ck"><input type="checkbox" data-set="vat" ${s.vat ? 'checked' : ''}> 부가세 10% 가산</label>`;
+  return `<section class="card"><details class="set"><summary>단가·기준 설정</summary>
+    <div class="form">${h}</div>
+    <p class="help">기본값은 2026년 8월 정산 파일 기준입니다. 계약 단가가 바뀌면 여기서 수정하세요. 설정은 모든 달에 공통 적용됩니다.</p>
+    <button class="btn danger sm" data-act="resetSet">기본값으로 되돌리기</button></details></section>`;
+}
+function refreshLive(t) {
+  const td = tdata(t.id), R = compute(t, state.ym, td), st = statusOf(t, td, R);
+  const hint = $('#tplHint')?.innerHTML;
+  $('#summary').innerHTML = summaryHTML(t, R);
+  if (hint) $('#tplHint').innerHTML = hint;
+  const b = $('#stBadge'); b.className = 'badge ' + st.k; b.textContent = st.label;
+  $('#tfoot').innerHTML = tfootHTML(t, R);
+  $('#filledCnt').textContent = `${R.filled}/${R.D}일 입력`;
+  R.rows.forEach(r => {
+    EXT_COLS[t.type].forEach(([k]) => { const el = document.getElementById('x' + k + r.d); if (el) el.textContent = extFmt(k, r[k]); });
+    document.getElementById('row' + r.d)?.classList.toggle('miss', r[KEYF[t.type] || 'N'] == null);
+  });
+  renderNav();
+}
+
+/* ═════════ 붙여넣기 파싱 ═════════ */
+function parsePaste(text, map, ym) {
+  const D = daysIn(ym), [Y, M] = ym.split('-').map(Number);
+  const out = {}; let seq = 1, count = 0, other = 0;
+  for (const line of text.split(/\r?\n/)) {
+    if (!line.trim()) continue;
+    const cells = (line.includes('\t') ? line.split('\t') : line.trim().split(/\s{2,}|\s(?=[-\d])/)).map(c => c.trim());
+    let day = null, m;
+    if ((m = cells[0].match(/^(\d{4})\s*[-./년]\s*(\d{1,2})\s*[-./월]\s*(\d{1,2})/))) { if (+m[1] !== Y || +m[2] !== M) { other++; continue; } day = +m[3]; }
+    else if ((m = cells[0].match(/^(\d{1,2})\s*[/.월-]\s*(\d{1,2})(?:\D|$)/))) { if (+m[1] !== M) { other++; continue; } day = +m[2]; }
+    else if ((m = cells[0].match(/^(\d{1,2})일$/))) day = +m[1];
+    let nums;
+    if (day != null) nums = cells.slice(1);
+    else { if (!cells.some(c => /^-?[\d,]+(\.\d+)?%?$/.test(c))) continue; nums = cells; day = seq; }
+    if (day < 1 || day > D) continue;
+    const row = {};
+    for (const k in map) { const i = +map[k]; if (i > 0 && nums[i - 1] !== undefined && nums[i - 1] !== '') row[k] = nums[i - 1].replace(/[,%]/g, ''); }
+    out[day] = row; seq = day + 1; count++;
+  }
+  return { rows: out, count, other };
+}
+
+/* ═════════ 기본 양식 Excel (SheetJS) ═════════ */
+function SB() { this.rows = []; this.fx = []; }
+SB.prototype.add = function (arr) {
+  const r = this.rows.length;
+  this.rows.push(arr.map((c, ci) => { if (c && typeof c === 'object' && 'f' in c) { this.fx.push({ r, c: ci, f: c.f, v: c.v }); return c.v ?? null; } return c; }));
+  return r + 1;
+};
+SB.prototype.sheet = function (w) {
+  const ws = XLSX.utils.aoa_to_sheet(this.rows);
+  this.fx.forEach(x => { ws[XLSX.utils.encode_cell({ r: x.r, c: x.c })] = { t: 'n', v: Number.isFinite(x.v) ? x.v : 0, f: x.f }; });
+  ws['!cols'] = (w || []).map(wch => ({ wch }));
+  return ws;
+};
+SB.prototype.csv = function () { return this.rows.map(r => r.map(c => { const s = c == null ? '' : String(c); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; }).join(',')).join('\r\n'); };
+const XL = i => { let s = '', n = i + 1; while (n > 0) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = (n - m - 1) / 26; } return s; };
+
+function buildSheet(t, ym, td) {
+  const g = GROUPS[t.group], R = compute(t, ym, td), s = R.s, D = R.D, sb = new SB(), f = FIELDS[t.type];
+  const nv = v => v == null || Number.isNaN(v) ? null : v;
+  sb.add([`${ymLabel(ym)} ${g.short} ${t.name} 정산서`]);
+  sb.add(['서비스', g.name]);
+  if (s.eventId) sb.add(['이벤트 ID', s.eventId]);
+  const dRow = sb.add(['정산월', ym, '월 일수', D]);
+  sb.add(['상태', R.errors.length ? '미확정 (검증 오류 있음)' : '검증 통과']);
+  if (t.type === 'rs' || t.type === 'cloud') {
+    let pRow;
+    if (t.type === 'cloud') { const mRow = sb.add(['월 기준 금액', num(s.monthly)]); pRow = sb.add(['일 단가', { f: `ROUND(B${mRow}/D${dRow},2)`, v: R.sums.price }]); }
+    else pRow = sb.add(['적용 단가', nv(R.sums.price)]);
+    const aRow = sb.add(['정산액', null]); sb.add([]);
+    sb.add(['날짜', ...f.map(k => label(t, k)), '단가', '일 정산액']);
+    const cN = XL(f.length), cP = XL(f.length + 1), cA = XL(f.length + 2);
+    let r0 = null, r1 = null;
+    R.rows.forEach(r => { const rn = sb.rows.length + 1; r0 ??= rn; r1 = rn; sb.add([`${ym}-${pad(r.d)}`, ...f.map(k => nv(r[k])), { f: `$B$${pRow}`, v: R.sums.price }, { f: `${cN}${rn}*${cP}${rn}`, v: r.amt || 0 }]); });
+    const tRow = sb.add(['합계', ...f.map((k, i) => ({ f: `SUM(${XL(i + 1)}${r0}:${XL(i + 1)}${r1})`, v: R.sums[k] })), null, { f: `SUM(${cA}${r0}:${cA}${r1})`, v: R.sums.amt }]);
+    sb.fx.push({ r: aRow - 1, c: 1, f: `${cA}${tRow}`, v: R.sums.amt });
+    if (t.type === 'cloud') { sb.add([]); sb.add(['CTN 이용일수', nv(num(td.extra.ctnDays)), '일별 합계', R.sums.N]); sb.add(['CTN 금액', nv(num(td.extra.ctnAmt)), '계산 금액', R.sums.amt]); }
+  }
+  if (t.type === 'ending') {
+    const cRow = sb.add(['CPA 단가', num(s.cpa)]), rRow = sb.add(['RS 단가', num(s.rs)]), aRow = sb.add(['정산액', null]); sb.add([]);
+    sb.add(['날짜', '가입', '해지', '당일해지', '가입누적(보정)', 'CPA 금액', 'RS 금액', '일 합계']);
+    let r0 = null, r1 = null;
+    R.rows.forEach(r => { const rn = sb.rows.length + 1; r0 ??= rn; r1 = rn;
+      sb.add([`${ym}-${pad(r.d)}`, nv(r.J), nv(r.C), nv(r.S), nv(r.N), { f: `(B${rn}-D${rn})*$B$${cRow}`, v: r.cpa || 0 }, { f: `E${rn}*$B$${rRow}`, v: r.rs || 0 }, { f: `F${rn}+G${rn}`, v: r.amt || 0 }]); });
+    const tRow = sb.add(['합계', ...'BCDEFGH'.split('').map(c => ({ f: `SUM(${c}${r0}:${c}${r1})`, v: 0 }))]);
+    sb.fx.push({ r: aRow - 1, c: 1, f: `H${tRow}`, v: R.amount || 0 });
+  }
+  if (t.type === 'finq') {
+    sb.add([]); sb.add(['날짜', '가입', '해지', '가입누적(보정)']);
+    let r1 = null; R.rows.forEach(r => { r1 = sb.rows.length + 1; sb.add([`${ym}-${pad(r.d)}`, nv(r.J), nv(r.C), nv(r.N)]); });
+    sb.add([]); const S = R.sums;
+    const a = sb.add(['말일 가입누적', { f: `D${r1}`, v: S.last || 0 }]), u = sb.add(['단가', num(s.unit)]);
+    const ac = sb.add(['당월 발생액', { f: `B${a}*B${u}`, v: S.accrual || 0 }]), c = sb.add(['전월 이월액', nv(S.carry)]);
+    const b = sb.add(['누적 잔액', { f: `B${ac}+B${c}`, v: S.bal }]), th = sb.add(['지급 기준', num(s.threshold)]);
+    sb.add(['판정', { f: `IF(B${b}>=B${th},"지급 대상","지급 대기(이월)")`, v: 0 }]);
+    const p = sb.add(['당월 지급 처리액', S.paid || 0, td.extra.paidNote || '']);
+    sb.add(['익월 이월 잔액', { f: `B${b}-B${p}`, v: S.after }]);
+  }
+  if (t.type === 'diet') {
+    const S = R.sums; sb.add([]);
+    sb.add(['날짜', ...f.map(k => label(t, k)), '당일완료율']);
+    let r0 = null, r1 = null;
+    R.rows.forEach(r => { const rn = sb.rows.length + 1; r0 ??= rn; r1 = rn; sb.add([`${ym}-${pad(r.d)}`, ...f.map(k => nv(r[k])), { f: `IF(F${rn}>0,E${rn}/F${rn},"")`, v: r.rate ?? 0 }]); });
+    const tRow = sb.add(['합계', ...f.map((k, i) => ({ f: `SUM(${XL(i + 1)}${r0}:${XL(i + 1)}${r1})`, v: S[k] }))]);
+    sb.add([]); sb.add(['항목', '회수', '단가', '금액']);
+    const b = sb.add(['기본급', null, null, S.base]);
+    const r35 = sb.add(['3~5회차 답변', { f: `C${tRow}`, v: S.a35 }, S.t35, { f: `B${sb.rows.length + 1}*C${sb.rows.length + 1}`, v: S.inc35 }]);
+    const r6 = sb.add(['6회 이상 답변', { f: `D${tRow}`, v: S.a6 }, S.t6, { f: `B${sb.rows.length + 1}*C${sb.rows.length + 1}`, v: S.inc6 }]);
+    const sp = sb.add(['지급액', null, null, { f: `D${b}+D${r35}+D${r6}`, v: S.supply }]);
+    const vt = sb.add(['부가세', null, null, s.vat ? { f: `ROUND(D${sp}*0.1,0)`, v: S.vat } : 0]);
+    sb.add(['실지급액', null, null, { f: `D${sp}+D${vt}`, v: S.supply + S.vat }]);
+  }
+  if (R.errors.length || R.warnings.length) { sb.add([]); sb.add(['검증 메모']); R.errors.forEach(m => sb.add(['오류', m])); R.warnings.forEach(m => sb.add(['경고', m])); }
+  if (td.memo) { sb.add([]); sb.add(['메모', td.memo]); }
+  return { sb, R, name: `${ym}_${g.short}_${t.name}_정산서`.replace(/[\\/:*?"<>|]/g, '') };
+}
+function saveBook(sheets, filename) {
+  if (typeof XLSX === 'undefined') {
+    sheets.forEach(x => download(x.name + '.csv', new Blob(['﻿' + x.sb.csv()], { type: 'text/csv' })));
+    toast('Excel 라이브러리를 불러오지 못해 CSV로 저장했습니다 (인터넷 연결 확인).'); return;
+  }
+  const wb = XLSX.utils.book_new(), used = new Set();
+  sheets.forEach(x => { let n = x.sheetName.replace(/[\\/?*[\]:]/g, '').slice(0, 31); while (used.has(n)) n = n.slice(0, 29) + '_' + used.size; used.add(n); XLSX.utils.book_append_sheet(wb, x.sb.sheet(x.w || [16, 14, 14, 16, 12, 14, 14, 14]), n); });
+  XLSX.writeFile(wb, filename);
+}
+function exportBasic(t) { const x = buildSheet(t, state.ym, tdata(t.id)); saveBook([{ ...x, sheetName: t.name }], x.name + '.xlsx'); }
+function exportAll() {
+  const sum = new SB();
+  sum.add([`${ymLabel(state.ym)} 정산 요약`]); sum.add([]);
+  sum.add(['서비스', '정산 대상', '금액 구분', '금액', '검증', '상태']);
+  const sheets = TARGETS.map(t => {
+    const td = tdata(t.id), x = buildSheet(t, state.ym, td), st = statusOf(t, td, x.R);
+    sum.add([GROUPS[t.group].name, t.name, x.R.amountLabel, x.R.amount, x.R.errors.length ? `오류 ${x.R.errors.length}` : x.R.warnings.length ? `경고 ${x.R.warnings.length}` : '통과', st.label]);
+    return { ...x, sheetName: t.name };
+  });
+  saveBook([{ sb: sum, name: `${state.ym}_정산요약`, sheetName: '요약', w: [28, 16, 20, 16, 10, 10] }, ...sheets], `${state.ym}_정산_전체.xlsx`);
+}
+function setPage(ps) {
+  const el = $('#pageStyle');
+  if (!ps) { el.textContent = '@page{size:A4;margin:14mm}'; return; }
+  const m = ps.margins || {}, mm = (v, d) => ((v ?? d) * 25.4).toFixed(1) + 'mm';
+  el.textContent = `@page{size:A4 ${ps.orientation === 'landscape' ? 'landscape' : 'portrait'};margin:${mm(m.top, .75)} ${mm(m.right, .7)} ${mm(m.bottom, .75)} ${mm(m.left, .7)}}`;
+}
+function printHTML(html, title) {
+  $('#print').innerHTML = html;
+  const old = document.title; if (title) document.title = title;
+  window.print();
+  setTimeout(() => { document.title = old; }, 800);
+}
+function printBasic(t) {
+  const td = tdata(t.id), R = compute(t, state.ym, td), g = GROUPS[t.group], f = FIELDS[t.type], ext = EXT_COLS[t.type];
+  let h = `<div class="basic"><h1>${ymLabel(state.ym)} ${esc(g.short)} ${esc(t.name)} 정산서${R.errors.length ? ' (미확정)' : ''}</h1>
+    <table><tr><td>서비스</td><td>${esc(g.name)}</td><td>정산월</td><td>${state.ym} (${R.D}일)</td></tr>
+    ${R.s.eventId ? `<tr><td>이벤트 ID</td><td colspan="3">${esc(R.s.eventId)}</td></tr>` : ''}
+    <tr><td>${esc(R.amountLabel)}</td><td colspan="3"><b>${R.amount == null ? '—' : won(R.amount)}</b></td></tr></table>
+    <table><tbody>${R.lines.map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join('')}</tbody></table>
+    <table><thead><tr><th>날짜</th>${f.map(k => `<th>${label(t, k)}</th>`).join('')}${ext.map(([, l]) => `<th>${l}</th>`).join('')}</tr></thead><tbody>` +
+    R.rows.map(r => `<tr><td>${state.ym}-${pad(r.d)}</td>${f.map(k => `<td>${fmt(r[k])}</td>`).join('')}${ext.map(([k]) => `<td>${extFmt(k, r[k])}</td>`).join('')}</tr>`).join('') +
+    `</tbody><tfoot>${tfootHTML(t, R)}</tfoot></table>`;
+  if (R.errors.length || R.warnings.length) h += `<table><tbody>${[...R.errors.map(m => ['오류', m]), ...R.warnings.map(m => ['경고', m])].map(([a, b]) => `<tr><td>${a}</td><td style="text-align:left">${esc(b)}</td></tr>`).join('')}</tbody></table>`;
+  if (td.memo) h += `<p>메모: ${esc(td.memo)}</p>`;
+  h += `<div class="foot">출력일 ${new Date().toLocaleDateString('ko-KR')}</div></div>`;
+  setPage(null); printHTML(h, `${state.ym}_${g.short}_${t.name}_정산서`);
+}
+function printDash() {
+  const rows = TARGETS.map(t => { const td = tdata(t.id), R = compute(t, state.ym, td), st = statusOf(t, td, R);
+    return `<tr><td>${esc(GROUPS[t.group].name)}</td><td>${esc(t.name)}</td><td>${esc(R.amountLabel)}</td><td>${R.amount == null ? '—' : won(R.amount)}</td><td>${st.label}</td></tr>`; }).join('');
+  setPage(null);
+  printHTML(`<div class="basic"><h1>${ymLabel(state.ym)} 정산 현황</h1><table><thead><tr><th>서비스</th><th>대상</th><th>구분</th><th>금액</th><th>상태</th></tr></thead><tbody>${rows}</tbody></table><div class="foot">출력일 ${new Date().toLocaleDateString('ko-KR')}</div></div>`, `${state.ym}_정산현황`);
+}
+
+/* ═════════ 기존 양식 엔진 (ExcelJS) ═════════
+   지난달 엑셀의 월 시트를 찾아 서식·수식·열 너비·인쇄 설정을 그대로 복사한 새 달 시트를 추가한다.
+   - 날짜/일자 머리글이 있는 일별 표를 자동 인식하고, 입력 열(가입·해지·누적 등)은 워크벤치 값으로 채운다.
+   - 계산 열(일 정산액·CPA·순증 등)은 원본 수식을 행에 맞게 옮기고, 수식이 없으면 워크벤치 계산값을 넣는다.
+   - 월 일수가 달라지면 행을 늘리거나 줄이고, 표 아래 합계·단가표·월정산액 수식의 참조도 함께 옮긴다. */
+const SEM = { date: '날짜', J: '가입', C: '해지(총)', S: '당일해지', late: '지연해지', N: '누적', net: '순증', amt: '일 정산액', cpa: 'CPA 금액', rs: 'RS 금액',
+  a12: '1~2회차', a35: '3~5회차', a6: '6회 이상', done: '상담누적(일)', rate: '당일완료율', inflow: '상담 인입 수', '': '원본 수식 유지 (없으면 비움)' };
+const SEM_FOR = { rs: ['J', 'C', 'N', 'net', 'amt'], cloud: ['J', 'C', 'N', 'net', 'amt'], finq: ['J', 'C', 'N', 'net', 'amt'],
+  ending: ['J', 'C', 'S', 'late', 'N', 'cpa', 'rs', 'amt'], diet: ['a12', 'a35', 'a6', 'done', 'rate', 'inflow'] };
+const INPUT_SEM = new Set(['J', 'C', 'S', 'N', 'a12', 'a35', 'a6', 'done', 'inflow']);
+function guessSem(label) {
+  const s = String(label || '').replace(/\s/g, '');
+  if (!s) return '';
+  if (/1~2회/.test(s)) return 'a12'; if (/3~5회/.test(s)) return 'a35'; if (/6회/.test(s)) return 'a6';
+  if (/완료율/.test(s)) return 'rate'; if (/인입/.test(s)) return 'inflow'; if (/상담누적/.test(s)) return 'done';
+  if (/당일해지/.test(s)) return 'S'; if (/지연해지/.test(s)) return 'late'; if (/순증/.test(s)) return 'net';
+  if (/누적/.test(s)) return 'N'; if (/해지/.test(s)) return 'C'; if (/가입/.test(s)) return 'J';
+  if (/^CPA/i.test(s)) return 'cpa'; if (/^RS/i.test(s)) return 'rs';
+  if (/정산|금액/.test(s)) return 'amt';
+  return '';
+}
+const colL = n => { let s = ''; while (n > 0) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = (n - m - 1) / 26; } return s; };
+const colN = s => [...s].reduce((a, ch) => a * 26 + ch.charCodeAt(0) - 64, 0);
+const unq = s => s.startsWith("'") ? s.slice(1, -1).replace(/''/g, "'") : s;
+const quoteName = n => /^[A-Za-z_][A-Za-z0-9_.]*$/.test(n) ? n : `'${n.replace(/'/g, "''")}'`;
+const toSerial = d => d.getTime() / 864e5 + 25569;
+const fromSerial = n => new Date(Math.round((n - 25569) * 864e5));
+const ERR = e => ({ err: e });
+const isErr = v => v != null && typeof v === 'object' && 'err' in v;
+
+function cellText(cell) {
+  const v = cell.value;
+  if (v == null) return '';
+  if (typeof v === 'object') {
+    if (v instanceof Date) return '';
+    if (v.richText) return v.richText.map(x => x.text).join('');
+    if (v.text != null) return String(v.text);
+    if ('result' in v && v.result != null && typeof v.result !== 'object') return String(v.result);
+    return '';
+  }
+  return String(v);
+}
+function dateOf(v) {
+  if (v && typeof v === 'object' && !(v instanceof Date) && 'result' in v) v = v.result;
+  if (v instanceof Date) return { y: v.getUTCFullYear(), m: v.getUTCMonth() + 1, d: v.getUTCDate(), kind: 'date' };
+  if (typeof v === 'number' && v > 36000 && v < 73000) { const d = fromSerial(v); return { y: d.getUTCFullYear(), m: d.getUTCMonth() + 1, d: d.getUTCDate(), kind: 'date' }; }
+  if (typeof v === 'string') {
+    const m = v.trim().match(/^(\d{4})\s*([-./])\s*(\d{1,2})\s*[-./]\s*(\d{1,2})\.?$/);
+    if (m) return { y: +m[1], m: +m[3], d: +m[4], kind: 'text', sep: m[2], pad: m[3].length === 2 };
+  }
+  return null;
+}
+/* 수식 안의 셀 참조를 찾아 바꾸기 (문자열 리터럴은 건너뜀) */
+const REF_RE = /((?:'(?:[^']|'')+'|[A-Za-z0-9_ㄱ-힝.]+)!)?(\$?)([A-Z]{1,3})(\$?)(\d+)(?::(\$?)([A-Z]{1,3})(\$?)(\d+))?(?![A-Za-z0-9_(!])/g;
+function mapRefs(f, fn) {
+  return f.split(/("(?:[^"]|"")*")/).map((part, i) => i % 2 ? part : part.replace(REF_RE, (m, sh, ca, c, ra, r, ca2, c2, ra2, r2, off, str) => {
+    const prev = off > 0 ? str[off - 1] : '';
+    if (prev && /[A-Za-z0-9_$.ㄱ-힝]/.test(prev)) return m;
+    const a = { col: c, colAbs: !!ca, row: +r, rowAbs: !!ra }, b = c2 ? { col: c2, colAbs: !!ca2, row: +r2, rowAbs: !!ra2 } : null;
+    const o = fn(sh ? unq(sh.slice(0, -1)) : null, a, b);
+    if (!o) return m;
+    const s = x => (x.colAbs ? '$' : '') + x.col + (x.rowAbs ? '$' : '') + x.row;
+    const shOut = o.sheet !== undefined ? (o.sheet ? quoteName(o.sheet) + '!' : '') : (sh || '');
+    return shOut + s(o.a) + (o.b ? ':' + s(o.b) : '');
+  })).join('');
+}
+function slide(f, dr, dc) {
+  const mv = x => x && ({ ...x, row: x.rowAbs ? x.row : x.row + dr, col: x.colAbs ? x.col : colL(colN(x.col) + dc) });
+  return mapRefs(f, (sh, a, b) => ({ a: mv(a), b: mv(b) }));
+}
+function fOf(ws, cell) {
+  const v = cell.value;
+  if (!v || typeof v !== 'object' || v instanceof Date) return null;
+  if (typeof v.formula === 'string') return v.formula.replace(/^=/, '');
+  if (v.sharedFormula) {
+    const mc = ws.getCell(v.sharedFormula), mf = mc.value && mc.value.formula;
+    return mf ? slide(mf.replace(/^=/, ''), cell.row - mc.row, cell.col - mc.col) : null;
+  }
+  return null;
+}
+function analyzeSheet(ws) {
+  const maxR = Math.min(ws.rowCount, 40), maxC = Math.min(Math.max(ws.columnCount, 1), 40);
+  for (let r = 1; r <= maxR; r++) for (let c = 1; c <= maxC; c++) {
+    if (!/^(날짜|일자|정산일)$/.test(cellText(ws.getCell(r, c)).replace(/\s/g, ''))) continue;
+    let F = null;
+    for (let rr = r + 1; rr <= r + 4; rr++) if (dateOf(ws.getCell(rr, c).value)) { F = rr; break; }
+    if (!F) continue;
+    const d0 = dateOf(ws.getCell(F, c).value); let L = F;
+    while (L < ws.rowCount) { const dn = dateOf(ws.getCell(L + 1, c).value); if (!dn || dn.m !== d0.m || dn.y !== d0.y) break; L++; }
+    const cols = [];
+    for (let cc = 1; cc <= Math.max(maxC, ws.columnCount); cc++) {
+      let lab = '';
+      for (let rr = F - 1; rr >= r; rr--) { const tx = cellText(ws.getCell(rr, cc)).trim(); if (tx) { lab = tx; break; } }
+      const has = [F, L].some(rr => { const v = ws.getCell(rr, cc).value; return v != null && v !== ''; });
+      if (lab || has) cols.push({ c: cc, letter: colL(cc), label: lab, sem: cc === c ? 'date' : guessSem(lab) });
+    }
+    return { ws, name: ws.name, headerRow: r, F, L, dateCol: c, dateInfo: d0, ym: `${d0.y}-${pad(d0.m)}`, cols };
+  }
+  return null;
+}
+const analyzeBook = wb => wb.worksheets.map(analyzeSheet).filter(Boolean);
+function lastValRow(ws, c) { for (let r = ws.rowCount; r >= 1; r--) { const v = ws.getCell(r, c).value; if (v != null && v !== '') return r; } return 1; }
+function pickTemplate(infos, ym, chosen) {
+  if (chosen) { const c = infos.find(i => i.name === chosen); if (c) return c; }
+  const before = infos.filter(i => i.ym < ym).sort((a, b) => a.ym < b.ym ? 1 : -1);
+  return before[0] || [...infos].sort((a, b) => a.ym < b.ym ? 1 : -1)[0];
+}
+function swapMonth(s, Yt, Mt, Yn, Mn) {
+  if (typeof s !== 'string' || (Yt === Yn && Mt === Mn)) return s;
+  const yy = y => pad(y % 100);
+  let o = s.replace(new RegExp(`(?<!\\d)(${Yt}|${yy(Yt)})(\\s*[년.\\-/]\\s*)(0?)${Mt}(?!\\d)`, 'g'), (m, y, sep, z) => `${y.length === 4 ? Yn : yy(Yn)}${sep}${z ? pad(Mn) : Mn}`);
+  o = o.replace(new RegExp(`(?<![\\d.])(0?)${Mt}(\\s*월)`, 'g'), (m, z, w) => `${z ? pad(Mn) : Mn}${w}`);
+  if (Yt !== Yn) o = o.replace(new RegExp(`월_${yy(Yt)}(?!\\d)`, 'g'), `월_${yy(Yn)}`).replace(new RegExp(`(?<!\\d)${Yt}년`, 'g'), `${Yn}년`).replace(new RegExp(`(?<!\\d)${yy(Yt)}년`, 'g'), `${yy(Yn)}년`);
+  return o;
+}
+
+/* ── 간이 수식 계산기: 미리보기 값·PDF·검산용 (Excel은 열 때 다시 계산) ── */
+function makeEvaluator(wb) {
+  const memo = new Map(), busy = new Set(), parsed = new Map();
+  const sheetBy = n => wb.worksheets.find(w => w.name === n);
+  function val(ws, r, c) {
+    const key = ws.id + ':' + r + ':' + c;
+    if (memo.has(key)) return memo.get(key);
+    if (busy.has(key)) return ERR('#CIRC!');
+    busy.add(key);
+    const cell = ws.getCell(r, c); let out = null;
+    if (cell.isMerged && cell.master && cell.master.address !== cell.address) out = null;
+    else {
+      const f = fOf(ws, cell), v = cell.value;
+      if (f) { try { let ast = parsed.get(f); if (!ast) { ast = parse(tokenize(f)); parsed.set(f, ast); } out = scalar(ev(ast, ws)); } catch (e) { out = ERR('#PARSE!'); } }
+      else if (v instanceof Date) out = toSerial(v);
+      else if (v && typeof v === 'object') out = v.richText ? v.richText.map(x => x.text).join('') : v.error ? ERR(v.error) : v.text != null ? String(v.text) : null;
+      else out = v ?? null;
+    }
+    busy.delete(key); memo.set(key, out); return out;
+  }
+  function tokenize(f) {
+    const toks = []; let i = 0;
+    while (i < f.length) {
+      const ch = f[i], rest = f.slice(i); let m;
+      if (/\s/.test(ch)) { i++; continue; }
+      if (ch === '"') { let j = i + 1, s = ''; while (j < f.length) { if (f[j] === '"') { if (f[j + 1] === '"') { s += '"'; j += 2; continue; } break; } s += f[j++]; } toks.push({ t: 'str', v: s }); i = j + 1; continue; }
+      if ((m = rest.match(/^((?:'(?:[^']|'')+'|[A-Za-z0-9_ㄱ-힝.]+)!)?\$?([A-Z]{1,3})\$?(\d+)(?::\$?([A-Z]{1,3})\$?(\d+))?(?![A-Za-z0-9_(])/))) {
+        toks.push({ t: 'ref', sheet: m[1] ? unq(m[1].slice(0, -1)) : null, c1: colN(m[2]), r1: +m[3], c2: m[4] ? colN(m[4]) : null, r2: m[5] ? +m[5] : null }); i += m[0].length; continue; }
+      if ((m = rest.match(/^(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?/))) { toks.push({ t: 'num', v: parseFloat(m[0]) }); i += m[0].length; continue; }
+      if ((m = rest.match(/^(TRUE|FALSE)(?![A-Za-z0-9_(])/i))) { toks.push({ t: 'lit', v: m[1].toUpperCase() === 'TRUE' }); i += m[0].length; continue; }
+      if ((m = rest.match(/^([A-Za-z_][A-Za-z0-9_.]*)\s*\(/))) { toks.push({ t: 'fn', v: m[1].toUpperCase().replace(/^_XLFN\./, '') }); i += m[0].length; continue; }
+      if ((m = rest.match(/^(<>|<=|>=|[-+*/^&=<>%(),])/))) { toks.push({ t: 'op', v: m[1] }); i += m[0].length; continue; }
+      if ((m = rest.match(/^#[A-Z0-9/!?]+/))) { toks.push({ t: 'lit', v: ERR(m[0]) }); i += m[0].length; continue; }
+      throw new Error('tok');
+    }
+    return toks;
+  }
+  function parse(toks) {
+    let p = 0; const pk = () => toks[p], isOp = v => pk() && pk().t === 'op' && pk().v === v;
+    const bin = (next, ops) => () => { let a = next(); while (pk() && pk().t === 'op' && ops.includes(pk().v)) { const o = toks[p++].v; a = { k: 'bin', o, a, b: next() }; } return a; };
+    const un = () => { if (isOp('-')) { p++; return { k: 'neg', a: un() }; } if (isOp('+')) { p++; return un(); } let a = prim(); while (isOp('%')) { p++; a = { k: 'pct', a }; } return a; };
+    const pow = bin(un, ['^']), mul = bin(pow, ['*', '/']), add = bin(mul, ['+', '-']), cat = bin(add, ['&']), cmp = bin(cat, ['=', '<>', '<', '>', '<=', '>=']);
+    function prim() {
+      const t = toks[p++]; if (!t) throw 0;
+      if (t.t === 'num' || t.t === 'str' || t.t === 'lit') return { k: 'lit', v: t.v };
+      if (t.t === 'ref') return { k: 'ref', ...t };
+      if (t.t === 'fn') {
+        const args = [];
+        if (isOp(')')) { p++; return { k: 'fn', n: t.v, args }; }
+        for (;;) { if (isOp(',')) { args.push({ k: 'lit', v: null }); p++; continue; } args.push(cmp()); if (isOp(',')) { p++; continue; } if (isOp(')')) { p++; break; } throw 0; }
+        return { k: 'fn', n: t.v, args };
+      }
+      if (t.t === 'op' && t.v === '(') { const e = cmp(); if (!isOp(')')) throw 0; p++; return e; }
+      throw 0;
+    }
+    const e = cmp(); if (p < toks.length) throw 0; return e;
+  }
+  const toNum = v => { if (v == null || v === '') return 0; if (typeof v === 'boolean') return +v; if (typeof v === 'number') return v; if (Number.isFinite(+v)) return +v;
+    const d = dateOf(String(v)); return d ? toSerial(new Date(Date.UTC(d.y, d.m - 1, d.d))) : NaN; };
+  const str = v => v == null ? '' : typeof v === 'boolean' ? (v ? 'TRUE' : 'FALSE') : String(v);
+  function scalar(v) { return v && v.range ? val(v.ws, v.r1, v.c1) : v; }
+  function cells(v) { const out = []; if (v && v.range) { for (let r = v.r1; r <= v.r2; r++) for (let c = v.c1; c <= v.c2; c++) out.push(val(v.ws, r, c)); } else out.push(v); return out; }
+  function nums(args, ws) { const out = []; for (const a of args) { const v = ev(a, ws); if (v && v.range) cells(v).forEach(x => { if (typeof x === 'number') out.push(x); else if (isErr(x)) throw x; }); else { if (isErr(v)) throw v; if (v != null && v !== '') out.push(toNum(v)); } } return out; }
+  const rnd = (x, n, mode) => { const f = Math.pow(10, n || 0), a = Math.abs(x) * f, s = Math.sign(x); const r = mode === 'up' ? Math.ceil(a - 1e-9) : mode === 'down' ? Math.floor(a + 1e-9) : Math.round(a + 1e-9); return s * r / f; };
+  function crit(c) { const m = String(c).match(/^(<=|>=|<>|<|>|=)?(.*)$/); const op = m[1] || '=', rhs = m[2], rn = Number(rhs), isN = rhs !== '' && Number.isFinite(rn);
+    return x => { const l = isN ? toNum(x) : str(x); const r = isN ? rn : rhs; switch (op) { case '=': return isN ? l === r : str(x).toLowerCase() === rhs.toLowerCase(); case '<>': return l !== r; case '<': return l < r; case '>': return l > r; case '<=': return l <= r; case '>=': return l >= r; } }; }
+  function fn(n, args, ws) {
+    const A = i => args[i] ? scalar(ev(args[i], ws)) : null;
+    switch (n) {
+      case 'SUM': return nums(args, ws).reduce((a, b) => a + b, 0);
+      case 'AVERAGE': { const x = nums(args, ws); return x.length ? x.reduce((a, b) => a + b, 0) / x.length : ERR('#DIV/0!'); }
+      case 'MIN': { const x = nums(args, ws); return x.length ? Math.min(...x) : 0; }
+      case 'MAX': { const x = nums(args, ws); return x.length ? Math.max(...x) : 0; }
+      case 'COUNT': return nums(args, ws).length;
+      case 'COUNTA': return args.flatMap(a => cells(ev(a, ws))).filter(v => v != null && v !== '').length;
+      case 'ROUND': return rnd(toNum(A(0)), toNum(A(1)));
+      case 'ROUNDUP': return rnd(toNum(A(0)), toNum(A(1)), 'up');
+      case 'ROUNDDOWN': case 'TRUNC': return rnd(toNum(A(0)), toNum(A(1)), 'down');
+      case 'INT': return Math.floor(toNum(A(0)));
+      case 'ABS': return Math.abs(toNum(A(0)));
+      case 'IF': { const c = A(0); if (isErr(c)) return c; return (typeof c === 'string' ? c !== '' : !!toNum(c)) ? (args[1] ? A(1) : true) : (args[2] ? A(2) : false); }
+      case 'IFERROR': { const v = A(0); return isErr(v) || (typeof v === 'number' && !Number.isFinite(v)) ? A(1) : v; }
+      case 'AND': return args.every((a, i) => !!toNum(A(i)));
+      case 'OR': return args.some((a, i) => !!toNum(A(i)));
+      case 'NOT': return !toNum(A(0));
+      case 'SUMPRODUCT': { const arrs = args.map(a => cells(ev(a, ws)).map(toNum)); return arrs[0].reduce((s, _, i) => s + arrs.reduce((p, a) => p * (a[i] || 0), 1), 0); }
+      case 'SUMIF': { const rg = cells(ev(args[0], ws)), sr = args[2] ? cells(ev(args[2], ws)) : rg, test = crit(A(1)); return rg.reduce((s, x, i) => test(x) ? s + (typeof sr[i] === 'number' ? sr[i] : 0) : s, 0); }
+      case 'COUNTIF': { const test = crit(A(1)); return cells(ev(args[0], ws)).filter(test).length; }
+      case 'DATE': return toSerial(new Date(Date.UTC(toNum(A(0)), toNum(A(1)) - 1, toNum(A(2)))));
+      case 'YEAR': return fromSerial(toNum(A(0))).getUTCFullYear();
+      case 'MONTH': return fromSerial(toNum(A(0))).getUTCMonth() + 1;
+      case 'DAY': return fromSerial(toNum(A(0))).getUTCDate();
+      case 'EOMONTH': { const d = fromSerial(toNum(A(0))); return toSerial(new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + toNum(A(1)) + 1, 0))); }
+      case 'WEEKDAY': return fromSerial(toNum(A(0))).getUTCDay() + 1;
+      case 'CHOOSE': { const i = Math.floor(toNum(A(0))); return i >= 1 && i < args.length ? A(i) : ERR('#VALUE!'); }
+      case 'VALUE': case 'N': return toNum(A(0));
+      case 'LEN': return str(A(0)).length;
+      case 'TEXT': return fmtValue(A(0), str(A(1))).text;
+      default: return ERR('#NAME?');
+    }
+  }
+  function ev(n, ws) {
+    switch (n.k) {
+      case 'lit': return n.v;
+      case 'ref': { const w = n.sheet ? sheetBy(n.sheet) : ws; if (!w) return ERR('#REF!'); if (n.c2 == null) return val(w, n.r1, n.c1);
+        return { range: true, ws: w, r1: Math.min(n.r1, n.r2), r2: Math.max(n.r1, n.r2), c1: Math.min(n.c1, n.c2), c2: Math.max(n.c1, n.c2) }; }
+      case 'neg': { const v = scalar(ev(n.a, ws)); return isErr(v) ? v : -toNum(v); }
+      case 'pct': { const v = scalar(ev(n.a, ws)); return isErr(v) ? v : toNum(v) / 100; }
+      case 'fn': try { return fn(n.n, n.args, ws); } catch (e) { return isErr(e) ? e : ERR('#VALUE!'); }
+      case 'bin': {
+        const a = scalar(ev(n.a, ws)), b = scalar(ev(n.b, ws));
+        if (isErr(a)) return a; if (isErr(b)) return b;
+        const x = toNum(a), y = toNum(b);
+        switch (n.o) {
+          case '+': return x + y; case '-': return x - y; case '*': return x * y;
+          case '/': return y === 0 ? ERR('#DIV/0!') : x / y; case '^': return Math.pow(x, y);
+          case '&': return str(a) + str(b);
+          default: { const both = typeof a === 'number' || typeof b === 'number'; const l = both ? x : str(a).toLowerCase(), r = both ? y : str(b).toLowerCase();
+            return { '=': l === r, '<>': l !== r, '<': l < r, '>': l > r, '<=': l <= r, '>=': l >= r }[n.o]; }
+        }
+      }
+    }
+  }
+  return { val };
+}
+
+/* ── 표시 형식 (PDF용) ── */
+function splitSections(nf) { const out = []; let cur = '', q = false; for (let i = 0; i < nf.length; i++) { const ch = nf[i]; if (ch === '"') q = !q; if (ch === '\\' && !q) { cur += ch + (nf[i + 1] || ''); i++; continue; } if (ch === ';' && !q) { out.push(cur); cur = ''; continue; } cur += ch; } out.push(cur); return out; }
+function fmtGeneral(v) { if (Number.isInteger(v)) return String(v); return String(Number(v.toPrecision(10))); }
+function fmtValue(v, nf) {
+  if (v == null || v === '') return { text: '' };
+  if (isErr(v)) return { text: v.err };
+  if (typeof v === 'boolean') return { text: v ? 'TRUE' : 'FALSE' };
+  if (typeof v !== 'number') { const secs = splitSections(nf || ''); const ts = secs[3] || (secs.length === 1 && /@/.test(secs[0]) ? secs[0] : null); if (ts) return { text: ts.replace(/_./g, ' ').replace(/\*./g, '').replace(/"([^"]*)"/g, '$1').replace('@', v) }; return { text: String(v) }; }
+  if (!Number.isFinite(v)) return { text: '#NUM!' };
+  if (!nf || /^general$/i.test(nf)) return { text: fmtGeneral(v) };
+  if (/^m{1,2}-d{1,2}-yy$/i.test(nf) || /^m\/d\/yyyy$/i.test(nf)) nf = 'yyyy-mm-dd'; // 기본 날짜 형식(14번)은 한국어 Excel에서 yyyy-mm-dd로 표시됨
+  const secs = splitSections(nf); let sec = secs[0], x = v, neg = false;
+  if (v < 0) { if (secs[1] != null && secs[1] !== '') { sec = secs[1]; x = -v; } else neg = true; }
+  else if (v === 0 && secs[2] != null && secs[2] !== '') sec = secs[2];
+  sec = sec.replace(/\[\$([^\]-]*)(-[^\]]*)?\]/g, (m, s) => `"${s}"`).replace(/\[[^\]]*\]/g, '');
+  if (/^general$/i.test(sec.trim())) return { text: (neg ? '-' : '') + fmtGeneral(Math.abs(x)) };
+  const bare = sec.replace(/"[^"]*"/g, '').replace(/\\./g, '');
+  if (/[yd]/i.test(bare) || (/m/i.test(bare) && !/[#0?]/.test(bare))) return { text: fmtDate(x, sec) };
+  let left = '', right = '', fill = false, done = false, i = 0;
+  const pct = /%/.test(bare); if (pct) x *= 100;
+  const push = s => { if (fill) right += s; else left += s; };
+  while (i < sec.length) {
+    const ch = sec[i];
+    if (ch === '"') { const j = sec.indexOf('"', i + 1); push(sec.slice(i + 1, j < 0 ? undefined : j)); i = j < 0 ? sec.length : j + 1; continue; }
+    if (ch === '\\') { push(sec[i + 1] || ''); i += 2; continue; }
+    if (ch === '_') { push(' '); i += 2; continue; }
+    if (ch === '*') { fill = true; i += 2; continue; }
+    if (ch === '@') { i++; continue; }
+    const m = sec.slice(i).match(/^[#0?,.]+/);
+    if (m && !done && /[#0?]/.test(m[0])) {
+      const p = m[0], [ip, dp = ''] = p.split('.'), dec = (dp.match(/[0#?]/g) || []).length, minDec = (dp.match(/0/g) || []).length;
+      const minInt = (ip.match(/0/g) || []).length, group = /[#0?],[#0?]/.test(ip);
+      let s = Math.abs(x).toLocaleString('en-US', { minimumFractionDigits: minDec, maximumFractionDigits: dec, useGrouping: group });
+      const intPart = s.split('.')[0];
+      if (intPart === '0' && minInt === 0) s = s.replace(/^0/, '');
+      push((neg ? '-' : '') + s); done = true; i += p.length; continue;
+    }
+    push(ch); i++;
+  }
+  return fill ? { text: left + right, left, right } : { text: left };
+}
+function fmtDate(serial, sec) {
+  const d = fromSerial(serial), Y = d.getUTCFullYear(), M = d.getUTCMonth() + 1, D = d.getUTCDate(), w = d.getUTCDay();
+  const T = { yyyy: Y, yy: pad(Y % 100), mmmm: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][M - 1], mmm: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][M - 1],
+    mm: pad(M), m: M, dddd: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][w], ddd: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][w], dd: pad(D), d: D, aaaa: WD[w] + '요일', aaa: WD[w] };
+  let out = '', i = 0;
+  while (i < sec.length) {
+    const r = sec.slice(i); let m;
+    if (r[0] === '"') { const j = sec.indexOf('"', i + 1); out += sec.slice(i + 1, j); i = j + 1; continue; }
+    if (r[0] === '\\') { out += r[1] || ''; i += 2; continue; }
+    if (r[0] === '_' || r[0] === '*') { i += 2; continue; }
+    if ((m = r.match(/^(yyyy|yy|mmmm|mmm|mm|m|dddd|ddd|dd|d|aaaa|aaa)/i))) { out += T[m[1].toLowerCase()]; i += m[1].length; continue; }
+    out += r[0]; i++;
+  }
+  return out;
+}
+/* ── 시트를 HTML 표로 그리기 (PDF용) ── */
+const THEME = ['FFFFFF', '000000', 'E7E6E6', '44546A', '4472C4', 'ED7D31', 'A5A5A5', 'FFC000', '5B9BD5', '70AD47'];
+const INDEXED = ['000000', 'FFFFFF', 'FF0000', '00FF00', '0000FF', 'FFFF00', 'FF00FF', '00FFFF', '000000', 'FFFFFF', 'FF0000', '00FF00', '0000FF', 'FFFF00', 'FF00FF', '00FFFF',
+  '800000', '008000', '000080', '808000', '800080', '008080', 'C0C0C0', '808080', '9999FF', '993366', 'FFFFCC', 'CCFFFF', '660066', 'FF8080', '0066CC', 'CCCCFF',
+  '000080', 'FF00FF', 'FFFF00', '00FFFF', '800080', '800000', '008080', '0000FF', '00CCFF', 'CCFFFF', 'CCFFCC', 'FFFF99', '99CCFF', 'FF99CC', 'CC99FF', 'FFCC99',
+  '3366FF', '33CCCC', '99CC00', 'FFCC00', 'FF9900', 'FF6600', '666699', '969696', '003366', '339966', '003300', '333300', '993300', '993366', '333399', '333333'];
+function xlColor(c, fallback) {
+  if (!c) return fallback;
+  let hex = null;
+  if (c.argb) hex = c.argb.length === 8 ? c.argb.slice(2) : c.argb;
+  else if (c.theme != null) hex = THEME[c.theme] || null;
+  else if (c.indexed != null) hex = INDEXED[c.indexed] || null;
+  if (!hex) return fallback;
+  if (c.tint) { hex = [0, 2, 4].map(i => { let v = parseInt(hex.substr(i, 2), 16); v = c.tint > 0 ? v + (255 - v) * c.tint : v * (1 + c.tint); return pad(Math.round(v).toString(16)); }).join(''); }
+  return '#' + hex;
+}
+function renderSheetHTML(ws, E) {
+  let r1 = 1, c1 = 1, r2 = ws.rowCount, c2 = ws.columnCount;
+  const pa = ws.pageSetup && ws.pageSetup.printArea;
+  const pm = pa && pa.split(',')[0].replace(/\$/g, '').replace(/^.*!/, '').match(/([A-Z]+)(\d+):([A-Z]+)(\d+)/);
+  if (pm) { c1 = colN(pm[1]); r1 = +pm[2]; c2 = colN(pm[3]); r2 = +pm[4]; }
+  else {
+    let mr = 0, mc = 0;
+    ws.eachRow({ includeEmpty: false }, row => row.eachCell({ includeEmpty: true }, cell => { const b = cell.style && cell.style.border; if ((cell.value != null && cell.value !== '') || (b && Object.keys(b).length)) { mr = Math.max(mr, cell.row); mc = Math.max(mc, cell.col); } }));
+    r2 = mr || 1; c2 = mc || 1;
+  }
+  const span = {}, covered = new Set();
+  (ws.model.merges || []).forEach(rg => {
+    const m = rg.match(/([A-Z]+)(\d+):([A-Z]+)(\d+)/); if (!m) return;
+    const a = { c: colN(m[1]), r: +m[2] }, b = { c: colN(m[3]), r: +m[4] };
+    span[a.r + ':' + a.c] = { rs: b.r - a.r + 1, cs: b.c - a.c + 1 };
+    for (let r = a.r; r <= b.r; r++) for (let c = a.c; c <= b.c; c++) if (r !== a.r || c !== a.c) covered.add(r + ':' + c);
+  });
+  const defW = ws.properties.defaultColWidth || 8.43, defH = ws.properties.defaultRowHeight || 15;
+  const colVis = [], widths = [];
+  for (let c = c1; c <= c2; c++) { const col = ws.getColumn(c); if (col.hidden) continue; colVis.push(c); widths.push(Math.round((col.width || defW) * 7 + 5)); }
+  const totalW = widths.reduce((a, b) => a + b, 0);
+  const brd = b => { if (!b || !b.style) return null; const w = { thin: 1, hair: 1, dotted: 1, dashed: 1, medium: 2, mediumDashed: 2, mediumDashDot: 2, thick: 3, double: 3 }[b.style] || 1;
+    const st = /dash/i.test(b.style) ? 'dashed' : b.style === 'dotted' || b.style === 'hair' ? 'dotted' : b.style === 'double' ? 'double' : 'solid'; return `${w}px ${st} ${xlColor(b.color, '#000')}`; };
+  let h = `<table class="xl" style="width:${totalW}px"><colgroup>${widths.map(w => `<col style="width:${w}px">`).join('')}</colgroup>`;
+  for (let r = r1; r <= r2; r++) {
+    const row = ws.getRow(r); if (row.hidden) continue;
+    h += `<tr style="height:${Math.round((row.height || defH) * 4 / 3)}px">`;
+    for (const c of colVis) {
+      const k = r + ':' + c; if (covered.has(k)) continue;
+      const cell = ws.getCell(r, c), st = cell.style || {}, sp = span[k];
+      let rs = 1, cs = 1;
+      if (sp) { rs = Math.min(sp.rs, r2 - r + 1); cs = colVis.filter(x => x >= c && x < c + sp.cs).length; }
+      const v = E.val(ws, r, c), f = fmtValue(v, st.numFmt);
+      const css = [];
+      const fo = st.font || {};
+      if (fo.bold) css.push('font-weight:700'); if (fo.italic) css.push('font-style:italic'); if (fo.underline) css.push('text-decoration:underline'); if (fo.strike) css.push('text-decoration:line-through');
+      css.push(`font-size:${fo.size || 11}pt`); const fc = xlColor(fo.color, null); if (fc) css.push('color:' + fc);
+      if (fo.name) css.push(`font-family:'${fo.name}','Malgun Gothic',sans-serif`);
+      const fl = st.fill; if (fl && fl.type === 'pattern' && fl.pattern && fl.pattern !== 'none') { const bg = xlColor(fl.fgColor, null); if (bg) css.push('background:' + bg); }
+      const bd = st.border || {};
+      const rightCell = sp ? ws.getCell(r, c + sp.cs - 1) : cell, bottomCell = sp ? ws.getCell(r + sp.rs - 1, c) : cell;
+      [['top', bd.top], ['left', bd.left], ['right', (rightCell.style && rightCell.style.border || {}).right], ['bottom', (bottomCell.style && bottomCell.style.border || {}).bottom]].forEach(([side, b]) => { const s = brd(b); if (s) css.push(`border-${side}:${s}`); });
+      const al = st.alignment || {};
+      let ha = al.horizontal; if (!ha || ha === 'general') ha = typeof v === 'number' ? 'right' : typeof v === 'boolean' || isErr(v) ? 'center' : 'left';
+      if (ha === 'centerContinuous' || ha === 'distributed') ha = 'center'; if (ha === 'fill' || ha === 'justify') ha = 'left';
+      css.push('text-align:' + ha, 'vertical-align:' + ({ top: 'top', middle: 'middle', bottom: 'bottom' }[al.vertical] || 'bottom'));
+      if (al.wrapText) css.push('white-space:normal');
+      if (al.indent) css.push(`padding-left:${al.indent * 9 + 3}px`);
+      const content = f.left != null && f.right != null ? `<div style="display:flex;justify-content:space-between;gap:4px"><span>${esc(f.left)}</span><span>${esc(f.right)}</span></div>` : esc(f.text);
+      h += `<td${rs > 1 ? ` rowspan="${rs}"` : ''}${cs > 1 ? ` colspan="${cs}"` : ''} class="${typeof v === 'string' ? 'tx' : ''}" style="${css.join(';')}">${content}</td>`;
+    }
+    h += '</tr>';
+  }
+  h += '</table>';
+  const ps = ws.pageSetup || {}, mg = ps.margins || {};
+  const avail = ((ps.orientation === 'landscape' ? 297 : 210) - ((mg.left ?? 0.7) + (mg.right ?? 0.7)) * 25.4) * 3.78;
+  let zoom = Math.min(1, avail / totalW);
+  if (!ps.fitToPage && ps.scale && ps.scale !== 100) zoom = Math.min(zoom, ps.scale / 100);
+  return `<div style="zoom:${zoom.toFixed(3)};${ps.horizontalCentered ? 'display:flex;justify-content:center' : ''}">${h}</div>`;
+}
+
+/* ── 새 달 시트 만들기 ── */
+async function loadBook(rec) { const wb = new ExcelJS.Workbook(); await wb.xlsx.load(rec.buf.slice(0)); return wb; }
+async function buildFromTemplate(t, ym, td, rec) {
+  if (typeof ExcelJS === 'undefined') throw new Error('ExcelJS 라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인하세요.');
+  const wb = await loadBook(rec), infos = analyzeBook(wb);
+  if (!infos.length) throw new Error('‘날짜’ 또는 ‘일자’ 머리글이 있는 일별 표를 찾지 못했습니다.');
+  const s = getS(t.id), info = pickTemplate(infos, ym, s.tplSheet), R = compute(t, ym, td), notes = [];
+  const src = info.ws, F = info.F, Lt = info.L, Dt = Lt - F + 1, Dn = R.D, Ln = F + Dn - 1, delta = Ln - Lt;
+  const [Yn, Mn] = ym.split('-').map(Number), Yt = info.dateInfo.y, Mt = info.dateInfo.m;
+  const semOf = {}; info.cols.forEach(c => { semOf[c.c] = c.c === info.dateCol ? 'date' : (s.tplMap[c.letter] !== undefined ? s.tplMap[c.letter] : c.sem); });
+  const mapRow = r => r < F ? r : r <= Lt ? (r === Lt ? Ln : Math.min(r, Ln)) : r + delta;
+  const srcRowFor = tr => { if (tr < F) return tr; if (tr > Ln) return tr - delta; const i = tr - F; if (i === Dn - 1) return Lt; if (i < Dt - 1) return F + i; return Math.max(F, Lt - 1); };
+
+  // 같은 달 시트가 이미 있으면 교체
+  const existing = infos.find(i => i.ym === ym && i.ws !== src);
+  let newName = swapMonth(src.name, Yt, Mt, Yn, Mn), exIdx = -1;
+  if (existing) { newName = existing.ws.name; exIdx = wb.worksheets.indexOf(existing.ws); wb.removeWorksheet(existing.ws.id); notes.push(`이미 있던 ‘${newName}’ 시트를 새 내용으로 교체했습니다.`); }
+  if (newName === src.name) newName = `${src.name.slice(0, 26)} ${Mn}월`;
+  newName = newName.replace(/[\\/?*[\]:]/g, '').slice(0, 31);
+  const base = newName; let k = 2; while (wb.worksheets.some(w => w.name === newName)) newName = `${base.slice(0, 28)}_${k++}`;
+  const ns = wb.addWorksheet(newName, { properties: clone(src.properties) || {} });
+  // 최신 달이 앞(왼쪽)에 오는 파일이면 기준 시트 앞에, 아니면 뒤에 넣는다
+  const order = wb.worksheets.filter(w => w !== ns), si = order.indexOf(src);
+  const older = infos.filter(i => i.ym < info.ym && i.ws !== src && order.includes(i.ws));
+  const newestFirst = older.length && older.every(i => order.indexOf(i.ws) > si);
+  order.splice(exIdx >= 0 ? exIdx : newestFirst ? si : si + 1, 0, ns); order.forEach((w, i) => { w.orderNo = i + 1; });
+
+  // 안심클라우드: 기준 달의 CTN 증빙 시트(예: 26.08_ctn) 모양대로 이번 달 CTN 시트(26.09_ctn)를 원천 CTN 파일로 만든다 (통신사별 이어 붙임)
+  let cs = null;
+  if (t.type === 'cloud') {
+    const ctnSrc = wb.getWorksheet(src.name + '_ctn') || wb.worksheets.find(w => w !== src && w.name.startsWith(src.name) && /ctn/i.test(w.name));
+    const ctnData = await ctnGet(ym), cars = ctnData ? Object.keys(ctnData).filter(c => ctnData[c].rows.length).sort() : [];
+    if (ctnSrc) {
+      const cname = swapMonth(ctnSrc.name, Yt, Mt, Yn, Mn);
+      if (!cars.length) notes.push(`⚠ 이번 달 CTN 원천 파일을 불러오지 않아 ‘${cname}’ 시트를 만들지 못했습니다. 위 ‘원천 파일’에서 CTN 엑셀을 불러오세요.`);
+      else if (cname !== ctnSrc.name) {
+        const old = wb.getWorksheet(cname); if (old) wb.removeWorksheet(old.id);
+        cs = wb.addWorksheet(cname, { properties: clone(ctnSrc.properties) || {} });
+        const ord = wb.worksheets.filter(w => w !== cs); ord.splice(ord.indexOf(ns) + 1, 0, cs); ord.forEach((w, i) => { w.orderNo = i + 1; });
+        const rowsAll = cars.flatMap(c => ctnData[c].rows);
+        buildCtnSheet(ctnSrc, cs, rowsAll, Yt, Mt, Yn, Mn, daysIn(info.ym), Dn);
+        notes.push(`CTN 증빙 시트 ‘${cname}’를 만들었습니다: ${cars.map(c => `${c} ${ctnData[c].rows.length.toLocaleString()}명`).join(' + ')} = ${rowsAll.length.toLocaleString()}명.`);
+      }
+    }
+  }
+
+  const dataCols = new Set(info.cols.filter(c => semOf[c.c]).map(c => c.c));
+  const extended = new Set(), staleRefs = new Set();
+  const tr8 = (f, sr, tr, inData) => mapRefs(f, (sh, a, b) => {
+    if (sh != null && sh !== src.name) {
+      const sw = swapMonth(sh, Yt, Mt, Yn, Mn);
+      if (sw === sh) return null;
+      const to = wb.getWorksheet(sw), from = wb.getWorksheet(sh);
+      // 다른 달 시트(예: CTN 원장)로 바꿀 때, 원본 범위가 그 시트 끝까지였다면 새 시트 끝까지로 맞춘다
+      if (to) {
+        if (!b || !from) return { a, b, sheet: sw };
+        const fl = lastValRow(from, colN(b.col)), tl = lastValRow(to, colN(b.col));
+        return { a, b: b.row >= fl - 1 ? { ...b, row: Math.max(tl - (fl - b.row), a.row) } : b, sheet: sw };
+      }
+      staleRefs.add(`${sh}→${sw}`); return null;
+    }
+    const fix = x => x && ({ ...x, row: inData && !x.rowAbs ? x.row + (tr - sr) : mapRow(x.row) });
+    const A = fix(a), B = fix(b);
+    if (B && !inData && a.row === F && b.row < Lt && b.row >= Lt - 2 && a.col === b.col && dataCols.has(colN(a.col))) { B.row = Ln; extended.add(a.col); }
+    return { a: A, b: B, sheet: sh ? newName : undefined };
+  });
+  const Dtm = daysIn(info.ym), dayFixed = new Set();
+  const dayFix = f => Dtm === Dn ? f : f.replace(new RegExp(`(ROUND\\(\\s*\\d+(?:\\.\\d+)?\\s*/\\s*)${Dtm}(?=\\s*,)`, 'g'), (m, p) => { dayFixed.add(1); return p + Dn; });
+  const swapVal = v => {
+    if (typeof v === 'string') return swapMonth(v, Yt, Mt, Yn, Mn);
+    if (v instanceof Date) { const d = dateOf(v); return d.y === Yt && d.m === Mt ? new Date(Date.UTC(Yn, Mn - 1, Math.min(d.d, Dn))) : v; }
+    if (v && typeof v === 'object' && v.richText) {
+      const runs = v.richText.map(x => ({ ...x, text: swapMonth(x.text, Yt, Mt, Yn, Mn) }));
+      const whole = swapMonth(v.richText.map(x => x.text).join(''), Yt, Mt, Yn, Mn);
+      return { richText: runs.map(x => x.text).join('') === whole ? runs : [{ ...v.richText[0], text: whole }] };
+    }
+    if (v && typeof v === 'object' && ('formula' in v || 'sharedFormula' in v)) return null;
+    return v;
+  };
+  const maxC = Math.max(src.columnCount, ...info.cols.map(c => c.c));
+  for (let c = 1; c <= maxC; c++) { const sc = src.getColumn(c), tc = ns.getColumn(c); if (sc.width) tc.width = sc.width; if (sc.hidden) tc.hidden = true; }
+  const lastR = src.rowCount + delta;
+  for (let tr = 1; tr <= lastR; tr++) {
+    const sr = srcRowFor(tr), inData = tr >= F && tr <= Ln, srow = src.getRow(sr), trow = ns.getRow(tr);
+    if (srow.height) trow.height = srow.height; if (srow.hidden) trow.hidden = true;
+    const d = tr - F + 1, rv = inData ? R.rows[d - 1] : null;
+    for (let c = 1; c <= maxC; c++) {
+      const sc = src.getCell(sr, c), tc = ns.getCell(tr, c);
+      if (sc.style && Object.keys(sc.style).length) tc.style = clone(sc.style);
+      if (sc.isMerged && sc.master && sc.master.address !== sc.address) continue;
+      const f = fOf(src, sc), sem = inData ? semOf[c] : null;
+      if (inData && sem) {
+        if (sem === 'date') {
+          if (f && d > 1) { tc.value = { formula: tr8(f, sr, tr, true) }; continue; }
+          const di = dateOf(sc.value) || info.dateInfo;
+          tc.value = di.kind === 'text' ? `${Yn}${di.sep}${di.pad ? pad(Mn) : Mn}${di.sep}${di.pad ? pad(d) : d}` : new Date(Date.UTC(Yn, Mn - 1, d));
+          continue;
+        }
+        if (INPUT_SEM.has(sem)) { const x = rv[sem]; tc.value = ok(x) ? x : null; continue; }
+        if (f) { tc.value = { formula: tr8(f, sr, tr, true) }; continue; }
+        const x = { net: rv.net, late: rv.late, rate: rv.rate, amt: rv.amt, cpa: rv.cpa, rs: rv.rs }[sem];
+        tc.value = ok(x) ? x : null; continue;
+      }
+      if (f) { tc.value = { formula: dayFix(tr8(f, sr, tr, inData)) }; continue; }
+      tc.value = inData ? null : swapVal(sc.value);
+    }
+  }
+  extended.forEach(col => notes.push(`${col}열 합계 수식이 말일 행을 빠뜨리고 있어 ${F}~${Ln}행 전체로 넓혔습니다.`));
+  if (dayFixed.size) notes.push(`수식 안의 월 일수 ${Dtm}을(를) ${Dn}(으)로 바꿨습니다 (예: ROUND(500/${Dn},2)).`);
+  staleRefs.forEach(x => { const [a, b] = x.split('→'); notes.push(`⚠ ‘${a}’ 시트를 참조하는 수식이 있는데 ‘${b}’ 시트가 파일에 없어 그대로 두었습니다. 해당 시트를 추가한 뒤 수식을 확인하세요.`); });
+  // 셀 병합 (병합 후 원래 테두리 복원)
+  (src.model.merges || []).forEach(rg => {
+    const m = rg.match(/([A-Z]+)(\d+):([A-Z]+)(\d+)/); if (!m) return;
+    const ca = colN(m[1]), cb = colN(m[3]), ra = mapRow(+m[2]), rb = mapRow(+m[4]);
+    if (ra > rb || (ra === rb && ca === cb)) return;
+    try { ns.mergeCells(ra, ca, rb, cb); } catch (e) { return; }
+    for (let r = ra; r <= rb; r++) for (let c = ca; c <= cb; c++) { const st = src.getCell(srcRowFor(r), c).style; if (st && Object.keys(st).length) ns.getCell(r, c).style = clone(st); }
+  });
+  // 단가 셀 교체: 원본 수식이 가리키는 단가가 이번 달 단가와 다르면, 시트 안의 같은 단가 셀(예: 단가표)로 바꾸거나 숫자로 넣는다
+  // (일별 금액 수식 속 단가가 숫자로 적혀 있든 $단가 셀을 가리키든, 이번 달 단가와 다르면 맞춘다)
+  const want = t.type === 'ending' ? { cpa: num(R.s.cpa), rs: num(R.s.rs) } : (t.type === 'rs' || t.type === 'cloud') ? { amt: R.sums.price } : {};
+  const NUM_RE = /(?<![A-Za-z0-9_.$:])(\d+(?:\.\d+)?)(?![\d.A-Za-z(!:])/g;
+  const outsideStr = (f, fn) => f.split(/("(?:[^"]|"")*")/).map((p, i) => i % 2 ? p : fn(p)).join('');
+  info.cols.forEach(({ c }) => {
+    const sem = semOf[c]; if (!(sem in want)) return;
+    const w = want[sem], fv = ns.getCell(F, c).value; if (!fv || typeof fv.formula !== 'string') return;
+    let refFrom = null, refCur = null; const lits = [];
+    mapRefs(fv.formula, (sh, a, b) => { if (!sh && !b && a.rowAbs && a.colAbs && (a.row < F || a.row > Ln)) { const v = ns.getCell(a.row, colN(a.col)).value; if (typeof v === 'number') { refFrom = a; refCur = v; } } return null; });
+    outsideStr(fv.formula, p => p.replace(NUM_RE, m => { lits.push(+m); return m; }));
+    const cur = refFrom ? refCur : lits.length === 1 ? lits[0] : null;
+    if (!ok(w)) { if (cur != null) notes.push(`⚠ ${Dn}일 달 단가가 워크벤치에 등록되지 않아 양식의 기존 단가 ${cur}원이 그대로 들어갔습니다. 단가를 확인하세요.`); return; }
+    if (cur == null || Math.abs(cur - w) < 1e-9) return;
+    let desc = `${w}원으로`;
+    if (refFrom) {
+      let found = null;
+      for (let r = 1; r <= lastR && !found; r++) { if (r >= F && r <= Ln) continue; for (let cc = 1; cc <= maxC; cc++) { const v = ns.getCell(r, cc).value; if (typeof v === 'number' && Math.abs(v - w) < 1e-9) { found = { col: colL(cc), row: r }; break; } } }
+      const key = `$${refFrom.col}$${refFrom.row}`;
+      for (let r = F; r <= Ln; r++) {
+        const cell = ns.getCell(r, c), v = cell.value; if (!v || typeof v.formula !== 'string') continue;
+        cell.value = { formula: found ? mapRefs(v.formula, (sh, a, b) => !sh && !b && a.rowAbs && a.colAbs && a.col === refFrom.col && a.row === refFrom.row ? { a: { ...a, col: found.col, row: found.row } } : null) : v.formula.split(key).join(String(w)) };
+      }
+      if (found) desc = `${found.col}${found.row} 셀(${w}원)을 참조하도록`;
+    } else {
+      for (let r = F; r <= Ln; r++) {
+        const cell = ns.getCell(r, c), v = cell.value; if (!v || typeof v.formula !== 'string') continue;
+        cell.value = { formula: outsideStr(v.formula, p => p.replace(NUM_RE, m => Math.abs(+m - cur) < 1e-9 ? String(w) : m)) };
+      }
+    }
+    notes.push(`${colL(c)}열(${SEM[sem]}) 단가를 ${cur}원 → ${desc} 바꿨습니다 (${Dn}일 달).`);
+  });
+  // 인쇄·보기 설정
+  const ps = clone(src.pageSetup) || {};
+  if (ps.printArea) ps.printArea = mapRefs(ps.printArea.split(',')[0].replace(/^.*!/, ''), (sh, a, b) => ({ a: { ...a, row: mapRow(a.row) }, b: b && { ...b, row: mapRow(b.row) } }));
+  ns.pageSetup = ps;
+  if (src.headerFooter) ns.headerFooter = clone(src.headerFooter);
+  ns.views = (clone(src.views) || [{}]).map(v => ({ ...v, tabSelected: true }));
+  wb.worksheets.forEach(w => { if (w !== ns && w.views && w.views[0]) w.views[0].tabSelected = false; });
+  wb.views = [{ ...((wb.views && wb.views[0]) || { x: 0, y: 0, width: 12000, height: 20000 }), activeTab: wb.worksheets.indexOf(ns), firstSheet: 0 }];
+  if (wb.calcProperties) wb.calcProperties.fullCalcOnLoad = true; else wb.calcProperties = { fullCalcOnLoad: true };
+  // 수식 결과 미리 계산 + 워크벤치 금액과 검산
+  const E = makeEvaluator(wb);
+  ns.eachRow({ includeEmpty: false }, row => row.eachCell({ includeEmpty: false }, cell => {
+    const v = cell.value; if (!v || typeof v.formula !== 'string') return;
+    const res = E.val(ns, cell.row, cell.col);
+    if (res != null && !isErr(res) && typeof res !== 'object' && !(typeof res === 'number' && !Number.isFinite(res))) cell.value = { formula: v.formula, result: res };
+  }));
+  const amtCols = info.cols.filter(c => semOf[c.c] === 'amt').map(c => c.c), sumCols = amtCols.length ? amtCols.slice(0, 1) : info.cols.filter(c => semOf[c.c] === 'cpa' || semOf[c.c] === 'rs').map(c => c.c);
+  if (sumCols.length && R.amount != null && t.type !== 'finq' && t.type !== 'diet') {
+    let tot = 0; for (let r = F; r <= Ln; r++) sumCols.forEach(c => { const v = E.val(ns, r, c); if (typeof v === 'number') tot += v; });
+    if (Math.abs(tot - R.amount) >= 1) notes.push(`⚠ 엑셀 양식으로 계산한 일별 합계 ${won(r2(tot))}이 워크벤치 계산 ${won(R.amount)}과 다릅니다. 양식의 단가·반올림 수식을 확인하세요.`);
+    else notes.push(`✓ 엑셀 양식 계산 결과가 워크벤치 금액 ${won(R.amount)}과 일치합니다.`);
+  }
+  if (cs) cs.eachRow({ includeEmpty: false }, row => row.eachCell({ includeEmpty: false }, cell => {
+    const v = cell.value; if (!v || typeof v.formula !== 'string') return;
+    const res = E.val(cs, cell.row, cell.col); if (typeof res === 'number' && Number.isFinite(res)) cell.value = { formula: v.formula, result: res };
+  }));
+  const others = wb.worksheets.filter(w => w !== ns && !infos.some(i => i.ws === w) && !/ctn/i.test(w.name));
+  if (others.length) notes.push(`요약용 시트(${others.map(w => w.name).join(', ')})는 자동으로 고치지 않았습니다. 필요하면 엑셀에서 새 달 금액을 연결하세요.`);
+  let fileName = swapMonth(rec.name, Yt, Mt, Yn, Mn);
+  fileName = fileName.replace(/_\d{6}(?=[^\\/_]*\.xlsx$)/i, '_' + yymmdd());
+  if (!/\.xlsx$/i.test(fileName)) fileName += '.xlsx';
+  return { wb, ns, info, newName, notes, fileName, E, R };
+}
+
+/* 기준 CTN 시트(sw)의 머리글·서식·합계행을 그대로 두고 데이터 행만 원천 CTN 목록으로 바꿔 cs에 만든다 */
+function buildCtnSheet(sw, cs, rows, Yt, Mt, Yn, Mn, Dtm, Dn) {
+  const maxC = sw.columnCount;
+  let H = 0;
+  for (let r = 1; r <= Math.min(sw.rowCount, 15) && !H; r++) for (let c = 1; c <= maxC; c++) if (/^CTN$/i.test(cellText(sw.getCell(r, c)).trim())) { H = r; break; }
+  if (!H) throw new Error(`‘${sw.name}’ 시트에서 CTN 머리글을 찾지 못했습니다.`);
+  const F0 = H + 1, lastR = sw.rowCount;
+  const hasTot = Array.from({ length: maxC }, (_, i) => cellText(sw.getCell(lastR, i + 1)).replace(/\s/g, '')).includes('합계');
+  const L0 = hasTot ? lastR - 1 : lastR, n = rows.length, L1 = F0 + n - 1, shift = L1 - L0;
+  const mapRow = r => r < F0 ? r : r <= L0 ? (r === L0 ? L1 : Math.min(r, L1)) : r + shift;
+  const KEY = [/정산월/, /통신사/, /^CTN$/i, /패스키|PASSKEY/i, /유료일수/, /정산금액|금액/];
+  const keyOf = {}; for (let c = 1; c <= maxC; c++) { const h = cellText(sw.getCell(H, c)).replace(/\s/g, ''); const k = KEY.findIndex(re => re.test(h)); if (k >= 0) keyOf[c] = k; }
+  const fix = f => mapRefs(f, (sh, a, b) => sh ? null : ({ a: { ...a, row: mapRow(a.row) }, b: b && { ...b, row: mapRow(b.row) } }))
+    .replace(new RegExp(`(ROUND\\(\\s*\\d+(?:\\.\\d+)?\\s*/\\s*)${Dtm}(?=\\s*,)`, 'g'), `$1${Dn}`);
+  const swapV = v => typeof v === 'string' ? swapMonth(v, Yt, Mt, Yn, Mn) : v && v.richText ? { richText: v.richText.map(x => ({ ...x, text: swapMonth(x.text, Yt, Mt, Yn, Mn) })) } : v;
+  for (let c = 1; c <= maxC; c++) { const sc = sw.getColumn(c); if (sc.width) cs.getColumn(c).width = sc.width; if (sc.hidden) cs.getColumn(c).hidden = true; }
+  const copyRow = (sr, tr) => {
+    const h = sw.getRow(sr).height; if (h) cs.getRow(tr).height = h;
+    for (let c = 1; c <= maxC; c++) {
+      const sc = sw.getCell(sr, c), tc = cs.getCell(tr, c);
+      if (sc.style && Object.keys(sc.style).length) tc.style = clone(sc.style);
+      if (sc.isMerged && sc.master && sc.master.address !== sc.address) continue;
+      const f = fOf(sw, sc); tc.value = f ? { formula: fix(f) } : swapV(sc.value);
+    }
+  };
+  for (let r = 1; r < F0; r++) copyRow(r, r);
+  const colStyle = {}, colF = {};
+  for (let c = 1; c <= maxC; c++) { const sc = sw.getCell(F0, c); colStyle[c] = sc.style && Object.keys(sc.style).length ? clone(sc.style) : null; colF[c] = fOf(sw, sc); }
+  const h0 = sw.getRow(F0).height;
+  rows.forEach((rv, i) => {
+    const tr = F0 + i; if (h0) cs.getRow(tr).height = h0;
+    for (let c = 1; c <= maxC; c++) {
+      const tc = cs.getCell(tr, c); if (colStyle[c]) tc.style = colStyle[c];
+      if (colF[c]) tc.value = { formula: slide(colF[c], i, 0) };
+      else if (keyOf[c] != null) { const v = rv[keyOf[c]]; tc.value = v == null || v === '' ? null : v; }
+    }
+  });
+  for (let r = L0 + 1; r <= lastR; r++) copyRow(r, r + shift);
+  (sw.model.merges || []).forEach(rg => {
+    const m = rg.match(/([A-Z]+)(\d+):([A-Z]+)(\d+)/); if (!m || (+m[2] >= F0 && +m[4] <= L0)) return;
+    try { cs.mergeCells(mapRow(+m[2]), colN(m[1]), mapRow(+m[4]), colN(m[3])); } catch (e) {}
+  });
+  cs.pageSetup = clone(sw.pageSetup) || {}; if (cs.pageSetup.printArea) delete cs.pageSetup.printArea;
+  cs.views = (clone(sw.views) || [{}]).map(v => ({ ...v, tabSelected: false }));
+}
+
+/* ── 기존 양식 카드 ── */
+async function renderTplCard(t) {
+  const box = $('#tplCard'); if (!box) return;
+  const rec = await tplGet(t.id);
+  if (state.view !== t.id || !$('#tplCard')) return;
+  const hint = $('#tplHint');
+  const upload = `<label class="btn ${rec ? 'ghost sm' : ''}">${rec ? '다른 파일로 바꾸기' : '기존 엑셀 불러오기'}<input type="file" accept=".xlsx" hidden data-tplfile></label>`;
+  if (!rec) {
+    if (hint) hint.innerHTML = '<span style="color:var(--warn)">⚠ 기존 양식 미등록 — 누르면 지난달 엑셀을 먼저 선택합니다</span>';
+    box.innerHTML = `<h3>기존 양식으로 출력 <small>양식 미등록</small></h3>
+      <p class="help">02_정산 폴더의 지난달 파일(예: <b>${esc(t.file)}</b>)을 불러오면, 그 파일에 같은 서식의 새 달 시트를 추가해서 내려받고, PDF도 그 시트 모양 그대로 만듭니다. 한 번 불러오면 다음 달부터는 이번에 만든 파일을 자동으로 이어서 씁니다.</p>
+      <div class="btnrow">${upload}<button class="btn ghost sm" data-act="xlsxBasic">기본 양식 Excel</button><button class="btn ghost sm" data-act="pdfBasic">기본 양식 PDF</button></div>`;
+    return;
+  }
+  if (hint) hint.textContent = '기존 양식으로 출력: ' + rec.name;
+  const whereTxt = { idb: '이 브라우저에 보관됨 (새로고침·재시작해도 유지)', ls: '이 브라우저에 보관됨 (보조 저장소)', mem: '⚠ 브라우저 저장소를 쓸 수 없어 이 창을 닫으면 다시 불러와야 합니다' }[tplWhere[t.id]] || '';
+  try {
+    const wb = await loadBook(rec), infos = analyzeBook(wb), s = getS(t.id);
+    if (state.view !== t.id) return;
+    if (!infos.length) throw new Error('날짜/일자 표를 찾지 못했습니다.');
+    const info = pickTemplate(infos, state.ym, s.tplSheet);
+    const [Yn, Mn] = state.ym.split('-').map(Number);
+    const exists = infos.find(i => i.ym === state.ym && i !== info);
+    let nn = exists ? exists.name : swapMonth(info.name, info.dateInfo.y, info.dateInfo.m, Yn, Mn);
+    const semOpts = cur => ['', ...SEM_FOR[t.type]].map(k => `<option value="${k}" ${cur === k ? 'selected' : ''}>${SEM[k]}${INPUT_SEM.has(k) ? ' ← 입력값' : ''}</option>`).join('');
+    const mapRows = info.cols.map(c => {
+      const cur = c.c === info.dateCol ? 'date' : (s.tplMap[c.letter] !== undefined ? s.tplMap[c.letter] : c.sem);
+      const hasF = !!fOf(info.ws, info.ws.getCell(info.F, c.c));
+      return `<tr><td>${c.letter}</td><td>${esc(c.label || '(머리글 없음)')}</td><td>${c.c === info.dateCol ? '날짜' : `<select data-tplmap="${c.letter}">${semOpts(cur)}</select>`}</td><td class="help">${hasF ? '수식' : '값'}</td></tr>`;
+    }).join('');
+    const notes = state.notes[t.id];
+    box.innerHTML = `<h3>기존 양식으로 출력 <small>${rec.source === 'generated' ? '지난번 만든 파일을 이어서 사용' : '불러온 파일'}</small></h3>
+      <dl class="kv"><dt>양식 파일</dt><dd>${esc(rec.name)} <span class="help">(${new Date(rec.savedAt).toLocaleString('ko-KR')})</span>${whereTxt ? `<div class="help" style="${tplWhere[t.id] === 'mem' ? 'color:var(--warn)' : ''}">${whereTxt}</div>` : ''}</dd>
+        <dt>기준 시트</dt><dd><select data-tplsheet><option value="">자동 (${esc(info.name)})</option>${infos.map(i => `<option value="${esc(i.name)}" ${s.tplSheet === i.name ? 'selected' : ''}>${esc(i.name)} · ${ymLabel(i.ym)}</option>`).join('')}</select></dd>
+        <dt>만들 시트</dt><dd><b>${esc(nn)}</b> ${exists ? '<span class="badge prog">기존 시트 교체</span>' : '<span class="badge done">새로 추가</span>'} · ${info.F}행부터 ${daysIn(state.ym)}일</dd></dl>
+      <div class="btnrow"><button class="btn" data-act="tplXlsx">기존 양식 Excel 받기</button><button class="btn ghost" data-act="tplPdf">기존 양식 PDF 저장</button>${upload}
+        <button class="btn ghost sm" data-act="xlsxBasic">기본 양식 Excel</button><button class="btn ghost sm" data-act="pdfBasic">기본 양식 PDF</button><button class="btn danger sm" data-act="tplRemove">양식 해제</button></div>
+      ${notes ? `<ul class="msgs" style="margin-top:12px">${notes.map(n => `<li class="${n.startsWith('⚠') ? 'w' : n.startsWith('✓') ? 'o' : 'i'}">${esc(n)}</li>`).join('')}</ul>` : ''}
+      <details class="sub"><summary>열 인식 결과 확인·수정</summary>
+        <div class="tw"><table class="maptbl"><thead><tr><th>열</th><th>머리글</th><th>채울 내용</th><th>원본</th></tr></thead><tbody>${mapRows}</tbody></table></div>
+        <p class="help">‘← 입력값’ 열은 위 일별 표의 값으로 채웁니다. 나머지는 원본 수식을 새 행에 맞게 옮기고, 수식이 없으면 워크벤치 계산값을 넣습니다.</p></details>`;
+  } catch (e) {
+    box.innerHTML = `<h3>기존 양식으로 출력</h3><ul class="msgs"><li class="e">⛔ ${esc(rec.name)}: ${esc(e.message || e)}</li></ul><div class="btnrow">${upload}<button class="btn danger sm" data-act="tplRemove">양식 해제</button></div>`;
+  }
+}
+function confirmErrors(t) {
+  const R = compute(t, state.ym, tdata(t.id));
+  return !R.errors.length || confirm(`${t.name}: 검증 오류 ${R.errors.length}건이 남아 있습니다.\n- ${R.errors.join('\n- ')}\n\n그래도 파일을 만들까요?`);
+}
+async function tplExport(t, silent) {
+  const rec = await tplGet(t.id); if (!rec) throw new Error(`${t.name}: 기존 양식 파일이 등록되지 않았습니다.`);
+  if (!silent && !confirmErrors(t)) return;
+  const g = await buildFromTemplate(t, state.ym, tdata(t.id), rec);
+  const out = await g.wb.xlsx.writeBuffer();
+  const buf = out.buffer.slice(out.byteOffset, out.byteOffset + out.byteLength);
+  download(g.fileName, new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+  await tplPut(t.id, { name: g.fileName, buf, savedAt: Date.now(), source: 'generated' });
+  state.notes[t.id] = g.notes;
+  return g;
+}
+async function tplPdf(t) {
+  const rec = await tplGet(t.id); if (!rec) throw new Error(`${t.name}: 기존 양식 파일이 등록되지 않았습니다.`);
+  if (!confirmErrors(t)) return;
+  const g = await buildFromTemplate(t, state.ym, tdata(t.id), rec);
+  state.notes[t.id] = g.notes;
+  setPage(g.ns.pageSetup);
+  printHTML(renderSheetHTML(g.ns, g.E), g.fileName.replace(/\.xlsx$/i, ''));
+  renderTplCard(t);
+}
+/* 기존 양식 등록 (파일 1개 → 대상 1개) */
+async function registerTpl(t, file, quiet) {
+  const buf = await file.arrayBuffer(), rec = { name: file.name, buf, savedAt: Date.now(), source: 'upload' };
+  const infos = analyzeBook(await loadBook(rec));
+  if (isCloudSourceName(file.name) || infos.some(i => i.cols.some(c => /통신사/.test(c.label)))) {
+    if (!quiet) alert(`${file.name}\n이 파일은 정산 양식이 아니라 안심클라우드 원천 데이터(일자별 가입자·CTN)입니다.\n안심클라우드 화면의 ‘원천 파일’ → ‘원천 엑셀 불러오기’에 넣어 주세요.\n기존 양식에는 02_정산\\안심클라우드의 지난달 정산 파일(예: ${T.CL01.file})을 등록합니다.`);
+    return null;
+  }
+  if (!infos.length) { if (!quiet) alert(`${file.name}\n이 파일에서 ‘날짜’·‘일자’·‘정산일’ 머리글이 있는 일별 표를 찾지 못했습니다.`); return null; }
+  const where = await tplPut(t.id, rec); delete state.notes[t.id];
+  const sv = settings[t.id] || {}; delete sv.tplSheet; sv.tplMap = {}; settings[t.id] = sv; store.set('stl.settings.v1', settings);
+  if (!quiet) toast(`양식 등록: ${file.name}${where === 'mem' ? ' (⚠ 브라우저 저장 실패 — 이 창에서만 유지)' : ''}`);
+  return { infos, where };
+}
+/* 양식이 없으면 기본 양식으로 넘어가지 않고 파일 선택 → 등록 → 이어서 출력 */
+function pickTplThen(t, then) {
+  const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.xlsx'; inp.style.display = 'none';
+  inp.addEventListener('change', async () => {
+    const f = inp.files[0]; inp.remove(); if (!f) return;
+    try { if (await registerTpl(t, f)) { if (state.view === t.id) renderTplCard(t); then(); } } catch (e) { alert('엑셀 파일을 읽지 못했습니다: ' + (e.message || e)); }
+  });
+  document.body.appendChild(inp);
+  toast(`${t.name}: 기존 양식 파일(예: ${t.file})을 선택하세요`);
+  inp.click();
+}
+const MATCH = { HC01: /배너/, HC02: /엔딩/, HC03: /핀크/, HC04: /제이엠/, HC05: /드리미/, HC06: /인센티브|식단/, MC01: /JSF\s*\(?\s*13\b/i, MC02: /JSF\s*\(?\s*45\b/i, CL01: /안심클라우드/ };
+const isCloudSourceName = n => /웹하드\s*정산\s*(사용자\s*)?목록/.test(n);
+async function registerBulk(files) {
+  const byT = {}, skipped = [], cloudSrc = [];
+  [...files].sort((a, b) => a.name < b.name ? -1 : 1).forEach(f => { if (isCloudSourceName(f.name)) return cloudSrc.push(f); const id = Object.keys(MATCH).find(k => MATCH[k].test(f.name)); if (id) byT[id] = f; else skipped.push(f.name); });
+  if (cloudSrc.length) await importCloudFiles(T.CL01, cloudSrc);
+  const lines = [];
+  for (const [id, f] of Object.entries(byT)) {
+    try { const r = await registerTpl(T[id], f, true); lines.push(r ? `✓ ${T[id].name} ← ${f.name}${r.where === 'mem' ? ' (⚠ 이 창에서만 유지)' : ''}` : `✗ ${T[id].name} ← ${f.name} (일별 표를 찾지 못함)`); }
+    catch (e) { lines.push(`✗ ${T[id].name} ← ${f.name} (${e.message || e})`); }
+  }
+  const missing = TARGETS.filter(x => !byT[x.id]).map(x => x.name);
+  alert(`기존 양식 등록 결과\n\n${lines.join('\n') || '(등록된 파일 없음)'}${skipped.length ? `\n\n대상을 알 수 없어 건너뜀:\n${skipped.join('\n')}` : ''}${missing.length ? `\n\n이번에 선택되지 않은 대상: ${missing.join(', ')}` : ''}`);
+  renderMain();
+}
+async function busy(btn, fn) {
+  if (btn) btn.disabled = true;
+  try { await fn(); } catch (e) { console.error(e); alert('처리하지 못했습니다: ' + (e.message || e)); } finally { if (btn) btn.disabled = false; }
+}
+
+/* ═════════ 이벤트 ═════════ */
+function open(v) { state.view = v; store.set('stl.lastView', v); renderNav(); renderMain(); window.scrollTo(0, 0); }
+$('#nav').addEventListener('click', e => { const b = e.target.closest('[data-open]'); if (b) open(b.dataset.open); });
+$('#month').addEventListener('change', e => { if (!e.target.value) return; state.ym = e.target.value; state.notes = {}; store.set('stl.lastYm', state.ym); loadMonth(); renderAll(); });
+const main = $('#main');
+main.addEventListener('click', e => {
+  const o = e.target.closest('[data-open]'); if (o && state.view === 'dash') return open(o.dataset.open);
+  const c = e.target.closest('[data-copy]'); if (c) return copyText(c.dataset.copy);
+  const a = e.target.closest('[data-act]'); if (!a) return;
+  const t = T[state.view], act = a.dataset.act;
+  if (act === 'xlsxAll') exportAll();
+  if (act === 'printDash') printDash();
+  if (act === 'tplAll') busy(a, async () => {
+    const list = []; for (const x of TARGETS) if (await tplGet(x.id)) list.push(x);
+    if (!list.length) return toast('기존 양식을 불러온 대상이 없습니다. 각 대상 화면에서 먼저 불러오세요.');
+    const bad = list.filter(x => compute(x, state.ym, tdata(x.id)).errors.length);
+    if (!confirm(`${list.length}개 파일을 내려받습니다.${bad.length ? `\n검증 오류가 있는 대상: ${bad.map(x => x.name).join(', ')}` : ''}\n계속할까요?`)) return;
+    for (const x of list) { await tplExport(x, true); await new Promise(r => setTimeout(r, 400)); }
+    toast(`${list.length}개 파일을 내려받았습니다.`);
+  });
+  if (!t) return;
+  const td = tdata(t.id);
+  if (act === 'xlsx' || act === 'tplXlsx' || act === 'pdf' || act === 'tplPdf') {
+    const run = act.toLowerCase().endsWith('pdf') ? () => busy(a, () => tplPdf(t)) : () => busy(a, async () => { await tplExport(t); renderTplCard(t); });
+    if (tplMem[t.id]) run(); else tplGet(t.id).then(rec => rec ? run() : pickTplThen(t, run));
+  }
+  if (act === 'xlsxBasic') exportBasic(t);
+  if (act === 'pdfBasic') printBasic(t);
+  if (act === 'tplRemove' && confirm('이 대상의 기존 양식 파일 연결을 해제할까요? (원본 파일은 그대로입니다)')) { tplDel(t.id).then(() => { delete state.notes[t.id]; setS(t.id, { tplSheet: undefined, tplMap: {} }); renderTplCard(t); }); }
+  if (act === 'paste') {
+    const txt = $('#pasteBox').value; if (!txt.trim()) return toast('붙여넣을 내용이 없습니다.');
+    const p = parsePaste(txt, getS(t.id).map, state.ym);
+    Object.entries(p.rows).forEach(([d, r]) => { td.rows[d] = { ...(td.rows[d] || {}), ...r }; });
+    saveMonth(); renderMain(); renderNav();
+    toast(`${p.count}일 반영${p.other ? ` · 정산월이 다른 행 ${p.other}건 제외` : ''}`);
+  }
+  if (act === 'clear' && confirm(`${t.name} ${ymLabel(state.ym)} 일별 데이터를 모두 지울까요?`)) { td.rows = {}; saveMonth(); renderMain(); renderNav(); }
+  if (act === 'cloudClear' && confirm(`${ymLabel(state.ym)} 안심클라우드 원천 파일(일자별·CTN)과 일별 표를 비울까요?`)) {
+    delete td.extra.cloudSrc; delete td.extra.ctnDays; delete td.extra.ctnAmt; td.rows = {}; saveMonth();
+    delete ctnMem[state.ym]; ctnPut(state.ym, {}).then(() => { renderMain(); renderNav(); });
+  }
+  if (act === 'loadCarry') { td.extra.carry = a.dataset.v; saveMonth(); renderMain(); renderNav(); }
+  if (act === 'resetSet' && confirm(`${t.name}의 단가·기준 설정을 기본값으로 되돌릴까요?`)) { const keep = settings[t.id] || {}; settings[t.id] = { tplSheet: keep.tplSheet, tplMap: keep.tplMap }; store.set('stl.settings.v1', settings); renderMain(); renderNav(); }
+});
+main.addEventListener('input', e => {
+  const t = T[state.view]; if (!t) return; const el = e.target, td = tdata(t.id);
+  if (el.dataset.k) { const d = el.dataset.d; td.rows[d] = { ...(td.rows[d] || {}), [el.dataset.k]: el.value.trim() }; saveMonth(); refreshLive(t); }
+  else if (el.dataset.extra) { td.extra[el.dataset.extra] = el.value.trim() === '' ? undefined : el.value.trim(); saveMonth(); if (el.dataset.extra !== 'paidNote') refreshLive(t); }
+  else if ('memo' in el.dataset) { td.memo = el.value; saveMonth(); }
+});
+main.addEventListener('change', async e => {
+  if ('tplbulk' in e.target.dataset) { const fs = e.target.files; if (fs.length) await registerBulk(fs); e.target.value = ''; return; }
+  const t = T[state.view]; if (!t) return; const el = e.target, td = tdata(t.id);
+  if ('cloudsrc' in el.dataset) { const fs = [...el.files]; el.value = ''; if (fs.length) await busy(null, () => importCloudFiles(t, fs)); return; }
+  if (el.dataset.check != null) { td.checks[+el.dataset.check] = el.checked; saveMonth(); renderMain(); renderNav(); }
+  else if (el.dataset.map) { const s = getS(t.id); setS(t.id, { map: { ...s.map, [el.dataset.map]: +el.value } }); }
+  else if ('tplfile' in el.dataset) {
+    const f = el.files[0]; if (!f) return;
+    try { if (await registerTpl(t, f)) renderTplCard(t); } catch (err) { alert('엑셀 파일을 읽지 못했습니다: ' + (err.message || err)); }
+  }
+  else if ('tplsheet' in el.dataset) { setS(t.id, { tplSheet: el.value || undefined }); renderTplCard(t); }
+  else if (el.dataset.tplmap) { const s = getS(t.id); setS(t.id, { tplMap: { ...s.tplMap, [el.dataset.tplmap]: el.value } }); }
+  else if (el.dataset.set) {
+    const k = el.dataset.set, v = el.type === 'checkbox' ? el.checked : el.value.trim();
+    if (k.startsWith('days.')) { const s = getS(t.id); setS(t.id, { days: { ...s.days, [k.slice(5)]: v } }); } else setS(t.id, { [k]: v });
+    renderMain(); renderNav();
+  }
+});
+main.addEventListener('keydown', e => {
+  const el = e.target; if (!el.dataset.k || (e.key !== 'Enter' && e.key !== 'ArrowDown' && e.key !== 'ArrowUp')) return;
+  const nx = document.querySelector(`input[data-d="${+el.dataset.d + (e.key === 'ArrowUp' ? -1 : 1)}"][data-k="${el.dataset.k}"]`);
+  if (nx) { e.preventDefault(); nx.focus(); nx.select(); }
+});
+$('#btnBackup').addEventListener('click', async () => {
+  const out = {};
+  try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('stl.') && !k.startsWith('stl.tpl.')) out[k] = JSON.parse(localStorage.getItem(k)); } } catch (e) { Object.assign(out, mem); }
+  let n = 0;
+  for (const t of TARGETS) { const rec = await tplGet(t.id); if (rec) { out['stl.tpl.' + t.id] = { name: rec.name, savedAt: rec.savedAt, source: rec.source, b64: ab2b64(rec.buf) }; n++; } }
+  const d = new Date(); download(`정산워크벤치_백업_${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}.json`, new Blob([JSON.stringify(out)], { type: 'application/json' }));
+  toast(`입력값·설정과 기존 양식 파일 ${n}개를 백업했습니다.`);
+});
+$('#restore').addEventListener('change', async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try { const data = JSON.parse(await f.text()); if (!confirm(`백업의 ${Object.keys(data).length}개 항목으로 현재 데이터를 덮어쓸까요?`)) return;
+    for (const [k, v] of Object.entries(data)) {
+      if (k.startsWith('stl.tpl.')) { const id = k.slice(8); if (T[id] && v && v.b64) await tplPut(id, { name: v.name, savedAt: v.savedAt, source: v.source, buf: b642ab(v.b64) }); }
+      else if (k.startsWith('stl.')) store.set(k, v);
+    }
+    settings = store.get('stl.settings.v1', {}); loadMonth(); renderAll(); toast('복원했습니다.');
+  } catch (err) { alert('백업 파일을 읽지 못했습니다.'); }
+  e.target.value = '';
+});
+
+if (state.view !== 'dash' && !T[state.view]) state.view = 'dash';
+loadMonth(); renderAll();
+</script>
+</body>
+</html>

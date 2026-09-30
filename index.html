@@ -446,6 +446,11 @@ mark{background:#ffe58a;color:#1a1a1a;border-radius:2px;padding:0 1px}
 .ops-frame{display:block;width:100%;border:0;background:var(--surface);border-radius:14px}
 .ops-frame-foot{margin-top:10px;font-size:12px;color:var(--ink-faint)}
 body.ops-mode .content{padding-top:10px}
+/* settle patch */
+.settle-frame{display:block;width:100%;height:calc(100vh - 140px);min-height:620px;border:1px solid var(--border);border-radius:14px;background:var(--surface)}
+.settle-foot{margin-top:10px;font-size:12px;color:var(--ink-faint)}
+body.settle-mode .sidebar{display:none}
+body.settle-mode .content{padding-top:10px}
 body.ops-mode .sidebar{display:none}
 @media (max-width:860px){.ops-row{flex-direction:column;gap:6px}.ops-row-label{padding-top:0}}
 @media print{.tabbar{display:none!important}}
@@ -477,6 +482,7 @@ body.ops-mode .sidebar{display:none}
     <div class="tabbar" id="tabbar">
       <button data-tab="manual" onclick="navigate('home')">업무 매뉴얼</button>
       <button data-tab="ops" onclick="location.hash='#/ops/-/-/-'">상세 업무 처리</button>
+      <button data-tab="settle" onclick="location.hash='#/settle'">정산 업무</button>
     </div>
     <div class="content" id="content">
       <div id="pageBody"><!-- rendered by JS --></div>
@@ -495,6 +501,7 @@ body.ops-mode .sidebar{display:none}
 <script src="shots.js"></script>
 <script src="models.js"></script>
 <script src="ops.js"></script>
+<script src="settle.js"></script>
 <script src="drive.js"></script>
 <script>
 /* =========================================================================
@@ -2055,18 +2062,30 @@ function setupMobileNav(){
 function currentIdFromHash(){
   var h = location.hash.replace(/^#\/?/,'');
   if(h.split('/')[0]==='ops') return h;   /* ops.js patch */
+  if(h.split('/')[0]==='settle') return h;   /* settle patch */
   return h || 'home';
 }
 function navigate(id){
   if(location.hash === '#/'+id){ renderRoute(id); } else { location.hash = '#/'+id; }
 }
 function renderRoute(id){
-  /* ops.js patch — 상세 업무 처리 탭 */
-  var isOps = id.split('/')[0]==='ops';
+  /* ops.js patch — 상세 업무 처리 탭 · settle patch — 정산 업무 탭 */
+  var head = id.split('/')[0];
+  var isOps = head==='ops', isSettle = head==='settle';
   document.body.classList.toggle('ops-mode', isOps);
+  document.body.classList.toggle('settle-mode', isSettle);
+  var cur = isOps ? 'ops' : (isSettle ? 'settle' : 'manual');
   document.querySelectorAll('#tabbar button').forEach(function(b){
-    b.classList.toggle('on', b.getAttribute('data-tab')===(isOps?'ops':'manual'));
+    b.classList.toggle('on', b.getAttribute('data-tab')===cur);
   });
+  if(isSettle){
+    document.getElementById('pageBody').innerHTML = renderSettle();
+    document.getElementById('content').scrollTop = 0;
+    window.scrollTo(0,0);
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('scrim').classList.remove('open');
+    return;
+  }
   if(isOps){
     document.getElementById('pageBody').innerHTML = renderOps();
     document.getElementById('content').scrollTop = 0;
