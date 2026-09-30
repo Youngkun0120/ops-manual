@@ -504,7 +504,7 @@ body.ops-mode .sidebar{display:none}
 
 <script src="shots.js"></script>
 <script src="models.js"></script>
-<script src="ops.js"></script>
+<script src="ops.js?v=20260928-01b"></script>
 <script src="settle.js"></script>
 <script src="drive.js"></script>
 <script>
@@ -1785,7 +1785,7 @@ var NAV = [
     {id:'telco-check', label:'통신사 점검 대응', refs:[['m5',0],['m5',1]], lede:'통신사별 점검 일정을 파악해 내부에 공지하고, 점검 후 서비스 정상 여부를 확인합니다.'},
     {id:'protection-check', label:'부가서비스 점검 · 이용자 보호', refs:[['m5',2],['m5',3]], lede:'분기별 이용자보호 조사와 연 1회 KT 보안점검 등, 통신사가 요구하는 정기 점검·조사 대응입니다.'},
     {id:'ad-review', skills:['ad-image-review-request'], label:'마케팅 이미지 검수', refs:[['m5',5]], url:'https://deluxe-ear-076.notion.site/2f825368a17980a3a1e5f7f8fde31617', urlLabel:'외부가입창 가이드(노션)'},
-    {id:'health-metrics', skills:['healthcare-daily-aggregation','healthcare-ga-daily-input'], label:'마케팅 실적 집계', refs:[['m2',0],['m2',1],['m2',2]], lede:'매일 아침 5개 도구를 돌며 헬스케어 지표를 채우고, 제휴 클릭·가입 데이터를 함께 집계합니다.', url:'https://docs.google.com/spreadsheets/d/1azwDHc2YTYAr80YK-cKyaZ2-AosNK9Fyt-LuAbVCf_c/edit?gid=1139050704#gid=1139050704', urlLabel:'헬스케어 데이터 관리 시트'},
+    {id:'health-metrics', skills:['healthcare-daily-aggregation'], label:'마케팅 실적 집계', refs:[['m2',0],['m2',1],['m2',2]], lede:'매일 아침 5개 도구를 돌며 헬스케어 지표를 채우고, 제휴 클릭·가입 데이터를 함께 집계합니다.', url:'https://docs.google.com/spreadsheets/d/1azwDHc2YTYAr80YK-cKyaZ2-AosNK9Fyt-LuAbVCf_c/edit?gid=1139050704#gid=1139050704', urlLabel:'헬스케어 데이터 관리 시트'},
     {id:'publishing', label:'서비스 모니터링', refs:[['m7',1]], url:'http://pms.wisesolutions.co.kr:8080/', urlLabel:'요나 PMS'},
   ]},
   {goal:'부서 지원 · 서비스 품질 강화', no:3, group:'정산', dept:'재경팀', items:[
@@ -1799,7 +1799,7 @@ var NAV = [
     {id:'push-mgmt', skills:['telco-push-copy','lgu-push-schedule-register'], label:'푸시 마케팅 관리', refs:[['m4',0],['m4',1],['m4',2],['m4',3]], lede:'통신사 3사에 매월 반복되는 PUSH 발송계획 요청부터 등록, 클릭율 집계까지의 흐름입니다.', url:'https://docs.google.com/spreadsheets/d/1YP8tksLstz9jiVZ5aAzmJgXTZvgoLEJBjs07bsLQBCk/edit#gid=0', urlLabel:'푸시마케팅_데이터 시트'},
     {id:'event-ops', label:'이벤트 기획 (TMS · 엔딩노티)', refs:[['m1',0],['m1',1],['m1',2],['m1',3],['m1',4],['m1',5],['m1',6],['m1',7],['m1',8],['m1',9]], lede:'기획 완료 후 관리자·PASS·빌레터에 이벤트를 등록하고, 테스트·기록·퍼널 집계까지 진행하는 전체 절차입니다.', url:'https://docs.google.com/spreadsheets/d/1Eh2frfgnz0eCUJhs2A5UCGDE20Ixu6HmRYYDDGa0l78/edit#gid=957718005', urlLabel:'부가서비스 이벤트 시트'},
     {id:'event-prize', label:'이벤트 당첨자 상품 발송', refs:[['m1',10],['m1',11],['m1',12]], lede:'당첨자에게 경품을 발송하거나 신청 문자를 보내고, 공동부담 이벤트는 정산내역서까지 작성합니다.', url:'https://partner.wiseapi.kr/voc/userSearch.do', urlLabel:'파트너스 시스템'},
-    {id:'monthly-sms', skills:['monthly-member-sms-copy','paid-sms-batch-relay','monthly-member-sms-handover'], label:'월간 문자 발송', refs:[['m4',4],['m4',5]], lede:'헬스케어·마인드케어·투데이 유료회원 대상 월간 콘텐츠 문자 발송 업무입니다.', url:'https://adm.passhealthcare.com/voc/userSearch.do', urlLabel:'오션 관리자'},
+    {id:'monthly-sms', skills:['monthly-member-sms-copy','paid-sms-batch-relay'], label:'월간 문자 발송', refs:[['m4',4],['m4',5]], lede:'헬스케어·마인드케어·투데이 유료회원 대상 월간 콘텐츠 문자 발송 업무입니다.', url:'https://adm.passhealthcare.com/voc/userSearch.do', urlLabel:'오션 관리자'},
     {id:'mindcare-counsel', label:'1:1 마음 상담 관리', refs:[['m6',6]], url:'https://admin.firstmindcare.com/', urlLabel:'마인드케어 관리자'},
   ]},
   {no:5, group:'콘텐츠', dept:'기획팀', items:[
@@ -1858,7 +1858,7 @@ function metaPills(items){
     .map(function(f){ return '<span class="kv-pill"><span class="k">'+f[0]+'</span><span class="v">'+f[1]+'</span></span>'; });
   return pills.length ? '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px">'+pills.join('')+'</div>' : '';
 }
-/* 업무 페이지 → 상세 업무 처리(실행 센터) 스킬. id 는 ops-center.html 의 OPS_SKILLS id 와 같아야 한다. */
+/* 업무 페이지 → 상세 업무 처리(전임자 01 Claude 확장형, 업무 10개) 업무 id. ops-center.html 의 ids 목록과 같아야 한다. */
 var SKILL_NAMES = {
   'healthcare-daily-aggregation':'헬스케어 일일 데이터 집계', 'healthcare-ga-daily-input':'GA4 일자별 지표 입력',
   'lgu-healthcare-monthly-ga':'LG U+ 헬스케어 월간 GA 지표', 'ad-image-review-request':'광고 이미지 검수 요청서',

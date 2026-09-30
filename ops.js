@@ -8,16 +8,17 @@
    ========================================================================= */
 (function () {
   var SRC = 'ops-center.html';
+  var VER = '20260928-01b';   /* 실행 센터를 바꾸면 올린다 — 브라우저 캐시에 남은 옛 파일을 쓰지 않게 */
   var MIN_H = 760;
 
   window.renderOps = function () {
     var sub = location.hash.replace(/^#\/?/, '').split('/').slice(1).join('/');
-    var src = SRC + '?embed=1' + (sub ? '#/' + sub : '');
+    var src = SRC + '?embed=1&v=' + VER + (sub ? '#/' + sub : '');
     return '<iframe id="opsFrame" class="ops-frame" src="' + src + '" title="상세 업무 처리 실행 센터"' +
       ' style="height:' + MIN_H + 'px"></iframe>' +
       '<div class="ops-frame-foot">' +
         '<span>실행 센터가 이 화면 안에서 돌아갑니다. 화면이 좁으면 ' +
-        '<a class="ops-link" href="' + SRC + '" target="_blank" rel="noopener">새 창으로 열기 ↗</a></span>' +
+        '<a class="ops-link" href="' + SRC + '?v=' + VER + (sub ? '#/' + sub : '') + '" target="_blank" rel="noopener">새 창으로 열기 ↗</a></span>' +
       '</div>';
   };
 
