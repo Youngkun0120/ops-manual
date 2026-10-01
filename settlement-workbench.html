@@ -659,6 +659,8 @@ function monthOf(v) {
   if (v instanceof Date) return `${v.getUTCFullYear()}-${pad(v.getUTCMonth() + 1)}`;
   const m = String(v ?? '').match(/(\d{4})\D*(\d{1,2})/); return m ? `${m[1]}-${pad(+m[2])}` : '';
 }
+/* 원천 사용자 목록의 C열 — 파일에는 「CTN」으로 적혀 오지만 휴대폰 번호가 아니라 고유식별키다. 출력 양식에는 「고유식별키」로 쓴다. */
+const ID_RE = /^(CTN|고유식별키)$/i, ID_LABEL = '고유식별키';
 async function parseCloudFile(file) {
   if (typeof XLSX === 'undefined') throw new Error('엑셀 라이브러리를 불러오지 못했습니다 (인터넷 연결 확인).');
   const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' }), out = [];
@@ -668,8 +670,8 @@ async function parseCloudFile(file) {
     if (hi < 0) continue;
     const H = aoa[hi].map(v => String(v ?? '').replace(/\s/g, '')), col = re => H.findIndex(h => re.test(h));
     const car = col(/^통신사$/);
-    if (col(/^CTN$/i) >= 0 && col(/유료일수/) >= 0) {
-      const ix = { m: col(/정산월/), ctn: col(/^CTN$/i), key: col(/패스키|PASSKEY/i), days: col(/유료일수/), amt: col(/정산금액|금액/) };
+    if (col(ID_RE) >= 0 && col(/유료일수/) >= 0) {
+      const ix = { m: col(/정산월/), ctn: col(ID_RE), key: col(/패스키|PASSKEY/i), days: col(/유료일수/), amt: col(/정산금액|금액/) };
       const rows = aoa.slice(hi + 1).filter(r => r && r[ix.ctn] != null && r[ix.ctn] !== '')
         .map(r => [monthOf(r[ix.m]), String(r[car] ?? '').trim(), String(r[ix.ctn]), ix.key >= 0 ? String(r[ix.key] ?? '') : '', num(r[ix.days]) || 0, ix.amt >= 0 ? num(r[ix.amt]) : null]);
       out.push({ kind: 'ctn', rows });
@@ -697,7 +699,7 @@ async function importCloudFiles(t, files) {
   const src = td.extra.cloudSrc || { daily: {}, ctn: {} }, ctn = (await ctnGet(ym)) || {}, log = [];
   for (const f of files) {
     let parts; try { parts = await parseCloudFile(f); } catch (e) { log.push(`✗ ${f.name}: ${e.message || e}`); continue; }
-    if (!parts.length) { log.push(`✗ ${f.name}: 일자별(정산일·통신사·유료가입자수) 또는 CTN(정산월·통신사·CTN·총유료일수) 형식이 아닙니다.`); continue; }
+    if (!parts.length) { log.push(`✗ ${f.name}: 일자별(정산일·통신사·유료가입자수) 또는 CTN(정산월·통신사·고유식별키(CTN)·총유료일수) 형식이 아닙니다.`); continue; }
     for (const p of parts) {
       const byCar = {}; let other = 0;
       if (p.kind === 'daily') {
@@ -1427,6 +1429,13 @@ async function buildFromTemplate(t, ym, td, rec) {
     }
     notes.push(`${colL(c)}열(${SEM[sem]}) 단가를 ${cur}원 → ${desc} 바꿨습니다 (${Dn}일 달).`);
   });
+  let sumDone = false;
+  if (t.type === 'cloud') {
+    wb.worksheets.filter(w => /ctn/i.test(w.name)).forEach(w => {
+      for (let r = 1; r <= Math.min(w.rowCount, 15); r++) for (let c = 1; c <= w.columnCount; c++) { const cell = w.getCell(r, c); if (/^CTN$/i.test(cellText(cell).trim()) && typeof cell.value === 'string') cell.value = ID_LABEL; }
+    });
+    sumDone = addSummaryMonth(wb, Yt, Mt, Yn, Mn, notes);
+  }
   // 인쇄·보기 설정
   const ps = clone(src.pageSetup) || {};
   if (ps.printArea) ps.printArea = mapRefs(ps.printArea.split(',')[0].replace(/^.*!/, ''), (sh, a, b) => ({ a: { ...a, row: mapRow(a.row) }, b: b && { ...b, row: mapRow(b.row) } }));
@@ -1453,7 +1462,7 @@ async function buildFromTemplate(t, ym, td, rec) {
     const v = cell.value; if (!v || typeof v.formula !== 'string') return;
     const res = E.val(cs, cell.row, cell.col); if (typeof res === 'number' && Number.isFinite(res)) cell.value = { formula: v.formula, result: res };
   }));
-  const others = wb.worksheets.filter(w => w !== ns && !infos.some(i => i.ws === w) && !/ctn/i.test(w.name));
+  const others = wb.worksheets.filter(w => w !== ns && !infos.some(i => i.ws === w) && !/ctn/i.test(w.name) && !(sumDone && /요약/.test(w.name)));
   if (others.length) notes.push(`요약용 시트(${others.map(w => w.name).join(', ')})는 자동으로 고치지 않았습니다. 필요하면 엑셀에서 새 달 금액을 연결하세요.`);
   let fileName = swapMonth(rec.name, Yt, Mt, Yn, Mn);
   fileName = fileName.replace(/_\d{6}(?=[^\\/_]*\.xlsx$)/i, '_' + yymmdd());
@@ -1465,13 +1474,13 @@ async function buildFromTemplate(t, ym, td, rec) {
 function buildCtnSheet(sw, cs, rows, Yt, Mt, Yn, Mn, Dtm, Dn) {
   const maxC = sw.columnCount;
   let H = 0;
-  for (let r = 1; r <= Math.min(sw.rowCount, 15) && !H; r++) for (let c = 1; c <= maxC; c++) if (/^CTN$/i.test(cellText(sw.getCell(r, c)).trim())) { H = r; break; }
-  if (!H) throw new Error(`‘${sw.name}’ 시트에서 CTN 머리글을 찾지 못했습니다.`);
+  for (let r = 1; r <= Math.min(sw.rowCount, 15) && !H; r++) for (let c = 1; c <= maxC; c++) if (ID_RE.test(cellText(sw.getCell(r, c)).trim())) { H = r; break; }
+  if (!H) throw new Error(`‘${sw.name}’ 시트에서 고유식별키(CTN) 머리글을 찾지 못했습니다.`);
   const F0 = H + 1, lastR = sw.rowCount;
   const hasTot = Array.from({ length: maxC }, (_, i) => cellText(sw.getCell(lastR, i + 1)).replace(/\s/g, '')).includes('합계');
   const L0 = hasTot ? lastR - 1 : lastR, n = rows.length, L1 = F0 + n - 1, shift = L1 - L0;
   const mapRow = r => r < F0 ? r : r <= L0 ? (r === L0 ? L1 : Math.min(r, L1)) : r + shift;
-  const KEY = [/정산월/, /통신사/, /^CTN$/i, /패스키|PASSKEY/i, /유료일수/, /정산금액|금액/];
+  const KEY = [/정산월/, /통신사/, ID_RE, /패스키|PASSKEY/i, /유료일수/, /정산금액|금액/];
   const keyOf = {}; for (let c = 1; c <= maxC; c++) { const h = cellText(sw.getCell(H, c)).replace(/\s/g, ''); const k = KEY.findIndex(re => re.test(h)); if (k >= 0) keyOf[c] = k; }
   const fix = f => mapRefs(f, (sh, a, b) => sh ? null : ({ a: { ...a, row: mapRow(a.row) }, b: b && { ...b, row: mapRow(b.row) } }))
     .replace(new RegExp(`(ROUND\\(\\s*\\d+(?:\\.\\d+)?\\s*/\\s*)${Dtm}(?=\\s*,)`, 'g'), `$1${Dn}`);
@@ -1487,6 +1496,7 @@ function buildCtnSheet(sw, cs, rows, Yt, Mt, Yn, Mn, Dtm, Dn) {
     }
   };
   for (let r = 1; r < F0; r++) copyRow(r, r);
+  for (let c = 1; c <= maxC; c++) if (ID_RE.test(cellText(cs.getCell(H, c)).trim())) cs.getCell(H, c).value = ID_LABEL;
   const colStyle = {}, colF = {};
   for (let c = 1; c <= maxC; c++) { const sc = sw.getCell(F0, c); colStyle[c] = sc.style && Object.keys(sc.style).length ? clone(sc.style) : null; colF[c] = fOf(sw, sc); }
   const h0 = sw.getRow(F0).height;
@@ -1505,6 +1515,119 @@ function buildCtnSheet(sw, cs, rows, Yt, Mt, Yn, Mn, Dtm, Dn) {
   });
   cs.pageSetup = clone(sw.pageSetup) || {}; if (cs.pageSetup.printArea) delete cs.pageSetup.printArea;
   cs.views = (clone(sw.views) || [{}]).map(v => ({ ...v, tabSelected: false }));
+}
+
+/* 안심클라우드 「요약」 시트 — ‘월별 정산 총괄’ 표마다 새 정산월 행을 마지막 정산월 바로 아래(누적 합계 위)에 넣는다.
+   기준 달 행을 복사해서, 달 시트 참조(26.08 → 26.09 · 26.08_ctn → 26.09_ctn, 끝 행은 새 시트 끝으로)와
+   "2026-08" 같은 조건 문자열을 새 달로 바꾸고, 이 시트 안 참조는 한 행 아래로 옮긴다(일치 여부 · 전월 대비 수식이 짝 행을 따라간다).
+   누적 합계 행은 새 행까지 넓힌다. 행이 밀리므로 이 시트의 수식 · 병합 · 조건부 서식 · 입력 목록 범위도 함께 옮긴다.
+   분기 정산 진행 현황 같은 다른 표의 글자(반영 월 등)는 사람이 판단할 내용이라 그대로 둔다. */
+function addSummaryMonth(wb, Yt, Mt, Yn, Mn, notes) {
+  const ws = wb.worksheets.find(w => /요약/.test(w.name)); if (!ws) return false;
+  const maxC = Math.max(ws.columnCount, 8), lastR = ws.rowCount, ymT = `${Yt}-${pad(Mt)}`, ymN = `${Yn}-${pad(Mn)}`;
+  const ymOf = v => {
+    if (v && typeof v === 'object' && 'result' in v) v = v.result;
+    if (typeof v === 'number' && v > 2000 && v < 2100) { const y = Math.floor(v), m = Math.round((v - y) * 100); return m >= 1 && m <= 12 ? `${y}-${pad(m)}` : null; }
+    if (typeof v === 'string') { const m = v.trim().match(/^(\d{4})\s*[.\-/]\s*(\d{1,2})$/); return m ? `${m[1]}-${pad(+m[2])}` : null; }
+    return null;
+  };
+  const tables = [];
+  for (let r = 1; r <= lastR; r++) {
+    if (![...Array(maxC).keys()].some(i => /월별\s*정산\s*총괄/.test(cellText(ws.getCell(r, i + 1))))) continue;
+    let mc = 0, hr = 0;
+    for (let rr = r + 1; rr <= r + 3 && !mc; rr++) for (let c = 1; c <= maxC; c++) if (cellText(ws.getCell(rr, c)).replace(/\s/g, '') === '정산월') { mc = c; hr = rr; break; }
+    if (!mc) continue;
+    const months = []; let total = 0;
+    for (let rr = hr + 1; rr <= lastR; rr++) {
+      const ym = ymOf(ws.getCell(rr, mc).value);
+      if (ym) { months.push({ r: rr, ym }); continue; }
+      if (/누적|합계/.test(cellText(ws.getCell(rr, mc)))) { total = rr; break; }
+      if (months.length) break;
+    }
+    if (!months.length) continue;
+    tables.push({ title: cellText(ws.getCell(r, mc)) || `${r}행 표`, mc, months, total, base: months.find(m => m.ym === ymT), has: months.some(m => m.ym === ymN), last: months[months.length - 1] });
+  }
+  const todo = tables.filter(t => t.base && !t.has);
+  // 일 단가 표(해당 월 일수 28·29·30·31일 열 + 바로 아래 단가 행): 새 행은 새 달 일수 열을 가리킨다
+  const dayCol = {}; let dayRow = 0;
+  for (let r = 1; r <= Math.min(lastR, 20) && !dayRow; r++) for (let c = 1; c <= maxC; c++) { const m = cellText(ws.getCell(r, c)).replace(/\s/g, '').match(/^(28|29|30|31)일$/); if (m) { dayCol[+m[1]] = c; dayRow = r; } }
+  const Dt = daysIn(ymT), Dn = daysIn(ymN);
+  if (!todo.length) { if (tables.some(t => t.has)) notes.push(`요약 시트 ‘월별 정산 총괄’에는 이미 ${ymN.replace('-', '.')} 행이 있어 그대로 두었습니다.`); return tables.length > 0 && tables.every(t => t.has); }
+  const ins = todo.map(t => t.last.r + 1).sort((a, b) => a - b), first = ins[0];
+  const nr = r => r + ins.filter(x => x <= r).length;
+  const self = sh => sh == null || sh === ws.name;
+  const remap = f => mapRefs(f, (sh, a, b) => self(sh) ? { a: { ...a, row: nr(a.row) }, b: b && { ...b, row: nr(b.row) } } : null);
+  // 1) 병합 풀기 → 행 옮기기(아래부터) → 병합 다시
+  const merges = (ws.model.merges || []).slice();
+  const moved = merges.filter(rg => { const m = rg.match(/[A-Z]+(\d+):[A-Z]+(\d+)/); return m && +m[2] >= first; });
+  moved.forEach(rg => { try { ws.unMergeCells(rg); } catch (e) {} });
+  const copyCell = (from, to) => {
+    const f = fOf(ws, from);
+    to.style = from.style && Object.keys(from.style).length ? clone(from.style) : {};
+    to.value = f ? { formula: remap(f) } : (from.value && typeof from.value === 'object' && !(from.value instanceof Date) && 'result' in from.value ? from.value.result : from.value);
+  };
+  for (let r = lastR; r >= first; r--) {
+    const tr = nr(r), srow = ws.getRow(r), trow = ws.getRow(tr);
+    trow.height = srow.height; trow.hidden = srow.hidden;
+    for (let c = 1; c <= maxC; c++) copyCell(ws.getCell(r, c), ws.getCell(tr, c));
+  }
+  for (let r = 1; r < first; r++) for (let c = 1; c <= maxC; c++) { const cell = ws.getCell(r, c), f = fOf(ws, cell); if (f) cell.value = { formula: remap(f) }; }
+  ins.forEach((x, i) => { const r = x + i; const row = ws.getRow(r); for (let c = 1; c <= maxC; c++) { const cell = ws.getCell(r, c); cell.value = null; cell.style = {}; } row.height = undefined; });
+  moved.forEach(rg => { const m = rg.match(/([A-Z]+)(\d+):([A-Z]+)(\d+)/); try { ws.mergeCells(nr(+m[2]), colN(m[1]), nr(+m[4]), colN(m[3])); } catch (e) {} });
+  // 조건부 서식 · 입력 목록 범위
+  (ws.conditionalFormattings || []).forEach(cf => {
+    cf.ref = String(cf.ref).split(/\s+/).map(x => mapRefs(x, (sh, a, b) => ({ a: { ...a, row: nr(a.row) }, b: b && { ...b, row: nr(b.row) } }))).join(' ');
+    (cf.rules || []).forEach(rule => { if (Array.isArray(rule.formulae)) rule.formulae = rule.formulae.map(remap); });
+  });
+  if (ws.dataValidations && ws.dataValidations.model) {
+    const dv = {}; Object.entries(ws.dataValidations.model).forEach(([k, v]) => { dv[mapRefs(k, (sh, a, b) => ({ a: { ...a, row: nr(a.row) }, b: b && { ...b, row: nr(b.row) } }))] = v; });
+    ws.dataValidations.model = dv;
+  }
+  // 2) 새 정산월 행 채우기
+  const missing = new Set();
+  const other = (sh, a, b) => {
+    const sw = swapMonth(sh, Yt, Mt, Yn, Mn); if (sw === sh) return null;
+    const to = wb.getWorksheet(sw), from = wb.getWorksheet(sh);
+    if (!to) { missing.add(sw); return null; }
+    const end = x => { if (!from) return x; const fl = lastValRow(from, colN(x.col)), tl = lastValRow(to, colN(x.col)); return x.row >= fl - 1 ? { ...x, row: Math.max(tl - (fl - x.row), 1) } : x; };
+    return b ? { a, b: end(b), sheet: sw } : { a: end(a), sheet: sw };
+  };
+  const strMonth = f => f.replace(/"((?:[^"]|"")*)"/g, (m, x) => `"${swapMonth(x, Yt, Mt, Yn, Mn)}"`);
+  const blocks = todo.map(t => [nr(t.months[0].r), nr(t.last.r)]);
+  todo.forEach(t => {
+    const base = nr(t.base.r), lastNew = nr(t.last.r), row = lastNew + 1, d = row - base, firstNew = nr(t.months[0].r), tot = t.total ? nr(t.total) : 0;
+    const brow = ws.getRow(base); ws.getRow(row).height = brow.height;
+    for (let c = 1; c <= maxC; c++) {
+      const bc = ws.getCell(base, c), tc = ws.getCell(row, c);
+      if (bc.style && Object.keys(bc.style).length) tc.style = clone(bc.style);
+      if (c === t.mc) {
+        const v = bc.value;
+        if (typeof v === 'number') { tc.value = +(Yn + Mn / 100).toFixed(2); tc.numFmt = '0.00'; }
+        else tc.value = typeof v === 'string' ? swapMonth(v, Yt, Mt, Yn, Mn) : `${Yn}.${pad(Mn)}`;
+        continue;
+      }
+      const f = fOf(ws, bc);
+      if (f) tc.value = { formula: strMonth(mapRefs(f, (sh, a, b) => {
+        if (!self(sh)) return other(sh, a, b);
+        // 정산월 행끼리의 참조(전월 대비 · 일치 여부 짝)만 한 행 내리고, 단가 표처럼 표 밖 칸은 그대로 — 단가는 새 달 일수 열로
+        const mv = x => x && ({ ...x, row: !x.rowAbs && blocks.some(([lo, hi]) => x.row >= lo && x.row <= hi) ? x.row + d : x.row,
+          col: dayRow && x.row > dayRow && x.row <= dayRow + 2 && colN(x.col) === dayCol[Dt] && dayCol[Dn] ? colL(dayCol[Dn]) : x.col });
+        return { a: mv(a), b: mv(b) };
+      })) };
+      else tc.value = bc.value && typeof bc.value === 'object' && 'result' in bc.value ? bc.value.result : bc.value;
+    }
+    if (tot) for (let c = 1; c <= maxC; c++) {
+      const cell = ws.getCell(tot, c), f = fOf(ws, cell); if (!f) continue;
+      cell.value = { formula: mapRefs(f, (sh, a, b) => {
+        if (!self(sh)) return null;
+        if (b) return b.row === lastNew ? { a, b: { ...b, row } } : null;
+        return a.row >= firstNew && a.row <= lastNew ? { a: { ...a, row: a.row + 1 } } : null;
+      }) };
+    }
+  });
+  notes.push(`요약 시트 ${todo.map(t => `‘${t.title}’`).join(' · ')}에 ${ymN.replace('-', '.')} 행을 추가하고 누적 합계를 넓혔습니다. 분기 정산 진행 현황의 글자(반영 월 등)는 확인해서 고쳐 주세요.`);
+  missing.forEach(x => notes.push(`⚠ 요약 시트 새 행이 참조할 ‘${x}’ 시트가 없어 해당 수식은 기준 달 시트를 그대로 가리킵니다. 원천 파일을 불러온 뒤 다시 출력하세요.`));
+  return true;
 }
 
 /* ── 기존 양식 카드 ── */
