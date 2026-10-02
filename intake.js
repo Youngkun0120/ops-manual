@@ -117,9 +117,10 @@
       '<option value="N"' + (v !== 'Y' ? ' selected' : '') + '>N</option><option value="Y"' + (v === 'Y' ? ' selected' : '') + '>Y</option></select>';
   }
 
-  function tr(r) {
+  function tr(r, no) {
     var cls = (r.done === 'Y' ? 'is-done' : '') + (r.urgent === 'Y' && r.done !== 'Y' ? ' is-urgent' : '') + (overdue(r) ? ' is-overdue' : '');
     return '<tr data-id="' + esc(r.id) + '" class="' + cls + '">' +
+      '<td class="ik-no">' + no + '</td>' +
       '<td><input type="date" data-f="date" value="' + esc(r.date) + '"></td>' +
       '<td><input type="time" data-f="time" value="' + esc(r.time) + '"></td>' +
       '<td><input type="text" data-f="requester" value="' + esc(r.requester) + '" placeholder="요청자"></td>' +
@@ -134,9 +135,10 @@
   }
 
   function section(label, list, empty) {
-    var h = '<tr class="ik-sec"><td colspan="10">' + label + ' <span>' + list.length + '건</span></td></tr>';
-    if (!list.length) return h + '<tr class="ik-empty"><td colspan="10">' + empty + '</td></tr>';
-    return h + list.map(tr).join('');
+    var h = '<tr class="ik-sec"><td colspan="11">' + label + ' <span>' + list.length + '건</span></td></tr>';
+    if (!list.length) return h + '<tr class="ik-empty"><td colspan="11">' + empty + '</td></tr>';
+    // 행번호는 묶음(오늘 · 지난 내역)마다 따로, 위에서부터 내림차순(N … 1)
+    return h + list.map(function (r, i) { return tr(r, list.length - i); }).join('');
   }
 
   function stats() {
@@ -193,8 +195,8 @@
       '<div class="ik-bar"><button class="ik-add" data-act="add">+ 접수 추가</button>' +
       '<div class="ik-filter" role="group" aria-label="보기"><button data-filter="all">전체</button><button data-filter="open">미처리</button><button data-filter="urgent">긴급 미처리</button></div>' +
       '<div class="ik-stats"></div><button class="ik-csv" data-act="csv">CSV 내려받기</button></div>' +
-      '<div class="ik-wrap"><table class="ik-sheet"><colgroup><col style="width:150px"><col style="width:118px"><col style="width:110px"><col style="width:78px"><col style="width:110px"><col><col style="width:150px"><col style="width:84px"><col style="width:220px"><col style="width:40px"></colgroup>' +
-      '<thead><tr><th>접수 일자</th><th>접수 시간</th><th>요청자</th><th class="c">긴급 여부</th><th>접수자</th><th>요청 내용</th><th>처리 기한</th><th class="c">처리 결과</th><th>메모</th><th></th></tr></thead>' +
+      '<div class="ik-wrap"><table class="ik-sheet"><colgroup><col style="width:48px"><col style="width:150px"><col style="width:118px"><col style="width:110px"><col style="width:78px"><col style="width:110px"><col><col style="width:150px"><col style="width:84px"><col style="width:220px"><col style="width:40px"></colgroup>' +
+      '<thead><tr><th class="c">No.</th><th>접수 일자</th><th>접수 시간</th><th>요청자</th><th class="c">긴급 여부</th><th>접수자</th><th>요청 내용</th><th>처리 기한</th><th class="c">처리 결과</th><th>메모</th><th></th></tr></thead>' +
       '<tbody></tbody></table></div>' +
       '<div class="ik-foot">입력하면 바로 서버에 저장됩니다(링크를 아는 사람은 누구나 보고 고칠 수 있음). 다른 사람이 적은 내용은 30초마다 자동으로 반영됩니다. 접수자 이름은 이 브라우저가 기억해 다음 접수 때 미리 채웁니다.</div>' +
       '</div>';
