@@ -1,7 +1,7 @@
 /* =========================================================================
    운영업무 접수 현황 탭 (#/intake) — 운영 요청을 한 장의 시트에 접수하고 모아서 처리한다.
 
-   · 항목: 접수 일자 · 접수 시간 · 요청자 · 긴급(Y/N) · 접수자 · 요청 내용 · 처리 기한 · 처리 결과(Y/N)
+   · 항목: 접수 일자 · 접수 시간 · 요청자 · 긴급(Y/N) · 접수자 · 요청 내용 · 처리 기한 · 처리 결과(Y/N) · 메모
    · 정렬: 오늘(이후) 접수 건을 위에, 지난 날짜 건을 아래에 — 두 묶음 모두 일자 · 시간 오름차순.
    · 저장: 정산 워크벤치와 같은 Supabase 테이블 public.stl_docs 에 **한 건당 한 줄**(key = ops.intake.<id>).
      건마다 따로 저장하므로 두 사람이 서로 다른 건을 동시에 고쳐도 덮어쓰지 않는다(같은 건은 나중 저장 우선).
@@ -128,13 +128,14 @@
       '<td class="ik-body"><textarea data-f="body" rows="1" placeholder="요청 내용">' + esc(r.body) + '</textarea></td>' +
       '<td><input type="date" data-f="due" value="' + esc(r.due) + '"' + (overdue(r) ? ' title="처리 기한이 지났습니다"' : '') + '></td>' +
       '<td class="c">' + yn('done', r.done) + '</td>' +
+      '<td class="ik-memo"><textarea data-f="memo" rows="1" placeholder="메모">' + esc(r.memo) + '</textarea></td>' +
       '<td class="c"><button class="ik-del" data-act="del" title="이 건 삭제" aria-label="삭제">×</button></td>' +
       '</tr>';
   }
 
   function section(label, list, empty) {
-    var h = '<tr class="ik-sec"><td colspan="9">' + label + ' <span>' + list.length + '건</span></td></tr>';
-    if (!list.length) return h + '<tr class="ik-empty"><td colspan="9">' + empty + '</td></tr>';
+    var h = '<tr class="ik-sec"><td colspan="10">' + label + ' <span>' + list.length + '건</span></td></tr>';
+    if (!list.length) return h + '<tr class="ik-empty"><td colspan="10">' + empty + '</td></tr>';
     return h + list.map(tr).join('');
   }
 
@@ -173,9 +174,9 @@
 
   function csv() {
     var g = groups(), list = g.now.concat(g.past);
-    var head = ['접수 일자', '접수 시간', '요청자', '긴급 여부', '접수자', '요청 내용', '처리 기한', '처리 결과'];
+    var head = ['접수 일자', '접수 시간', '요청자', '긴급 여부', '접수자', '요청 내용', '처리 기한', '처리 결과', '메모'];
     var q = function (v) { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
-    var text = '﻿' + [head].concat(list.map(function (r) { return [r.date, r.time, r.requester, r.urgent || 'N', r.receiver, r.body, r.due, r.done || 'N']; }))
+    var text = '﻿' + [head].concat(list.map(function (r) { return [r.date, r.time, r.requester, r.urgent || 'N', r.receiver, r.body, r.due, r.done || 'N', r.memo]; }))
       .map(function (a) { return a.map(q).join(','); }).join('\r\n');
     var a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' }));
@@ -192,8 +193,8 @@
       '<div class="ik-bar"><button class="ik-add" data-act="add">+ 접수 추가</button>' +
       '<div class="ik-filter" role="group" aria-label="보기"><button data-filter="all">전체</button><button data-filter="open">미처리</button><button data-filter="urgent">긴급 미처리</button></div>' +
       '<div class="ik-stats"></div><button class="ik-csv" data-act="csv">CSV 내려받기</button></div>' +
-      '<div class="ik-wrap"><table class="ik-sheet"><colgroup><col style="width:150px"><col style="width:118px"><col style="width:110px"><col style="width:78px"><col style="width:110px"><col><col style="width:150px"><col style="width:84px"><col style="width:40px"></colgroup>' +
-      '<thead><tr><th>접수 일자</th><th>접수 시간</th><th>요청자</th><th class="c">긴급 여부</th><th>접수자</th><th>요청 내용</th><th>처리 기한</th><th class="c">처리 결과</th><th></th></tr></thead>' +
+      '<div class="ik-wrap"><table class="ik-sheet"><colgroup><col style="width:150px"><col style="width:118px"><col style="width:110px"><col style="width:78px"><col style="width:110px"><col><col style="width:150px"><col style="width:84px"><col style="width:220px"><col style="width:40px"></colgroup>' +
+      '<thead><tr><th>접수 일자</th><th>접수 시간</th><th>요청자</th><th class="c">긴급 여부</th><th>접수자</th><th>요청 내용</th><th>처리 기한</th><th class="c">처리 결과</th><th>메모</th><th></th></tr></thead>' +
       '<tbody></tbody></table></div>' +
       '<div class="ik-foot">입력하면 바로 서버에 저장됩니다(링크를 아는 사람은 누구나 보고 고칠 수 있음). 다른 사람이 적은 내용은 30초마다 자동으로 반영됩니다. 접수자 이름은 이 브라우저가 기억해 다음 접수 때 미리 채웁니다.</div>' +
       '</div>';

@@ -478,7 +478,7 @@ body.intake-mode .content{padding-top:10px;max-width:1320px}
 .ik-stats .hot,.ik-stats .hot b{color:var(--danger)}
 .ik-csv{font:inherit;font-size:12.5px;padding:6px 11px;border-radius:8px;border:1px solid var(--border-strong);background:var(--surface);color:var(--ink-muted);cursor:pointer}
 .ik-wrap{overflow:auto;max-height:calc(100vh - 250px);min-height:320px;border:1px solid var(--border-strong);border-radius:10px;background:var(--surface)}
-.ik-sheet{width:100%;min-width:1040px;border-collapse:collapse;table-layout:fixed;font-size:13px}
+.ik-sheet{width:100%;min-width:1260px;border-collapse:collapse;table-layout:fixed;font-size:13px}
 .ik-sheet th{position:sticky;top:0;z-index:2;background:var(--surface-2);color:var(--ink-muted);font-size:12px;font-weight:600;text-align:left;padding:8px;border-bottom:1px solid var(--border-strong);border-right:1px solid var(--border)}
 .ik-sheet td{border-bottom:1px solid var(--border);border-right:1px solid var(--border);padding:0;vertical-align:top;background:var(--surface)}
 .ik-sheet .c{text-align:center}
@@ -490,7 +490,7 @@ body.intake-mode .content{padding-top:10px;max-width:1320px}
 .ik-yn.y-urgent{color:var(--danger)!important;background:var(--danger-soft)!important}
 .ik-yn.y-done{color:var(--accent-ink)!important;background:var(--accent-soft)!important}
 .ik-sheet tr.is-urgent td:first-child{box-shadow:inset 3px 0 0 var(--danger)}
-.ik-sheet tr.is-done input,.ik-sheet tr.is-done textarea{color:var(--ink-faint)}
+.ik-sheet tr.is-done input,.ik-sheet tr.is-done textarea:not([data-f="memo"]){color:var(--ink-faint)}  /* 메모는 처리 후에도 읽히게 */
 .ik-sheet tr.is-overdue [data-f="due"]{color:var(--danger);font-weight:600}
 .ik-sec td{background:var(--surface-2);padding:7px 10px;font-size:12px;font-weight:700;color:var(--ink-muted);position:sticky;top:33px;z-index:1}
 .ik-sec span{font-weight:500;color:var(--ink-faint);margin-left:4px}
@@ -550,7 +550,7 @@ body.intake-mode .content{padding-top:10px;max-width:1320px}
 <script src="models.js"></script>
 <script src="ops.js?v=20260930-lg1"></script>
 <script src="settle.js"></script>
-<script src="intake.js?v=20261002-ik1"></script>
+<script src="intake.js?v=20261002-ik2"></script>
 <script src="drive.js"></script>
 <script>
 /* =========================================================================
