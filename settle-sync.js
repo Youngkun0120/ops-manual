@@ -42,7 +42,7 @@ window.STL_SYNC = (function () {
 
   /* ---------- 문서(JSON) ---------- */
   async function pull() {
-    var r = await req('/rest/v1/' + TABLE + '?select=key,data,updated_at');
+    var r = await req('/rest/v1/' + TABLE + '?select=key,data,updated_at&key=like.stl.*'  /* 같은 테이블의 운영업무 접수(ops.intake.*)는 가져오지 않는다 */);
     if (!r.ok) throw new Error('불러오기 실패 (' + r.status + ')');
     var rows = await r.json(), changed = [];
     rows.forEach(function (row) {

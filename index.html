@@ -398,6 +398,7 @@ mark{background:#ffe58a;color:#1a1a1a;border-radius:2px;padding:0 1px}
 }
 .tabbar button:hover{color:var(--ink-muted)}
 .tabbar button.on{color:var(--accent-ink);border-bottom-color:var(--accent)}
+.tabbar{overflow-x:auto;scrollbar-width:none}.tabbar button{flex:none;white-space:nowrap}  /* 탭 4개 — 좁은 화면에서 줄바꿈 대신 가로 스크롤 */
 .ops-picker{border:1px solid var(--border);border-radius:14px;background:var(--surface);padding:6px 16px;margin-bottom:22px}
 .ops-row{display:flex;gap:14px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--border)}
 .ops-row:last-child{border-bottom:0}
@@ -456,6 +457,48 @@ body.ops-mode .content{padding-top:10px}
 body.settle-mode .sidebar{display:none}
 body.settle-mode .content{padding-top:10px}
 body.ops-mode .sidebar{display:none}
+/* intake — 운영업무 접수 현황 */
+body.intake-mode .sidebar{display:none}
+body.intake-mode .content{padding-top:10px;max-width:1320px}
+.ik{max-width:1280px}
+.ik-head{display:flex;gap:16px;align-items:flex-start;justify-content:space-between;margin-bottom:14px}
+.ik-head h1{font-size:22px;margin:0 0 4px}
+.ik-head p{margin:0;font-size:13px;color:var(--ink-muted);line-height:1.6}
+.ik-chip{flex:none;font-size:11.5px;padding:4px 10px;border-radius:999px;background:var(--accent-soft);border:1px solid var(--accent-soft-border);color:var(--accent-ink);white-space:nowrap}
+.ik-chip.warn{background:var(--warn-soft);border-color:var(--warn-soft-border);color:var(--warn)}
+.ik-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px}
+.ik-add{font:inherit;font-size:13px;font-weight:600;padding:7px 14px;border-radius:8px;border:1px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer}
+.ik-add:hover{filter:brightness(1.08)}
+.ik-filter{display:inline-flex;border:1px solid var(--border-strong);border-radius:8px;overflow:hidden}
+.ik-filter button{font:inherit;font-size:12.5px;padding:6px 11px;border:0;background:var(--surface);color:var(--ink-muted);cursor:pointer}
+.ik-filter button+button{border-left:1px solid var(--border-strong)}
+.ik-filter button.on{background:var(--accent-soft);color:var(--accent-ink);font-weight:600}
+.ik-stats{display:flex;flex-wrap:wrap;gap:12px;font-size:12.5px;color:var(--ink-muted);margin-left:auto}
+.ik-stats b{color:var(--ink);font-variant-numeric:tabular-nums}
+.ik-stats .hot,.ik-stats .hot b{color:var(--danger)}
+.ik-csv{font:inherit;font-size:12.5px;padding:6px 11px;border-radius:8px;border:1px solid var(--border-strong);background:var(--surface);color:var(--ink-muted);cursor:pointer}
+.ik-wrap{overflow:auto;max-height:calc(100vh - 250px);min-height:320px;border:1px solid var(--border-strong);border-radius:10px;background:var(--surface)}
+.ik-sheet{width:100%;min-width:1040px;border-collapse:collapse;table-layout:fixed;font-size:13px}
+.ik-sheet th{position:sticky;top:0;z-index:2;background:var(--surface-2);color:var(--ink-muted);font-size:12px;font-weight:600;text-align:left;padding:8px;border-bottom:1px solid var(--border-strong);border-right:1px solid var(--border)}
+.ik-sheet td{border-bottom:1px solid var(--border);border-right:1px solid var(--border);padding:0;vertical-align:top;background:var(--surface)}
+.ik-sheet .c{text-align:center}
+.ik-sheet input,.ik-sheet textarea,.ik-sheet select{font:inherit;color:var(--ink);background:transparent;border:0;width:100%;padding:8px;border-radius:0;outline:none;box-sizing:border-box}
+.ik-sheet textarea{resize:none;line-height:1.5;display:block;overflow:hidden}
+.ik-sheet input:focus,.ik-sheet textarea:focus,.ik-sheet select:focus{box-shadow:inset 0 0 0 2px var(--focus);background:var(--surface)}
+.ik-sheet input::placeholder,.ik-sheet textarea::placeholder{color:var(--ink-faint);opacity:.6}
+.ik-yn{text-align:center;text-align-last:center;cursor:pointer;font-weight:600;color:var(--ink-faint)!important}
+.ik-yn.y-urgent{color:var(--danger)!important;background:var(--danger-soft)!important}
+.ik-yn.y-done{color:var(--accent-ink)!important;background:var(--accent-soft)!important}
+.ik-sheet tr.is-urgent td:first-child{box-shadow:inset 3px 0 0 var(--danger)}
+.ik-sheet tr.is-done input,.ik-sheet tr.is-done textarea{color:var(--ink-faint)}
+.ik-sheet tr.is-overdue [data-f="due"]{color:var(--danger);font-weight:600}
+.ik-sec td{background:var(--surface-2);padding:7px 10px;font-size:12px;font-weight:700;color:var(--ink-muted);position:sticky;top:33px;z-index:1}
+.ik-sec span{font-weight:500;color:var(--ink-faint);margin-left:4px}
+.ik-empty td{padding:14px 10px;color:var(--ink-faint);font-size:12.5px}
+.ik-del{font:inherit;font-size:16px;line-height:1;width:100%;height:34px;border:0;background:transparent;color:var(--ink-faint);cursor:pointer}
+.ik-del:hover{color:var(--danger)}
+.ik-foot{margin-top:10px;font-size:12px;color:var(--ink-faint);line-height:1.6}
+@media (max-width:860px){.ik-head{flex-direction:column;gap:8px}.ik-stats{margin-left:0;width:100%}.ik-wrap{max-height:none}}
 @media (max-width:860px){.ops-row{flex-direction:column;gap:6px}.ops-row-label{padding-top:0}}
 @media print{.tabbar{display:none!important}}
 </style>
@@ -487,6 +530,7 @@ body.ops-mode .sidebar{display:none}
       <button data-tab="manual" onclick="navigate('home')">업무 매뉴얼</button>
       <button data-tab="ops" onclick="location.hash='#/ops/-/-/-'">상세 업무 처리</button>
       <button data-tab="settle" onclick="location.hash='#/settle'">정산 업무</button>
+      <button data-tab="intake" onclick="location.hash='#/intake'">운영업무 접수 현황</button>
     </div>
     <div class="content" id="content">
       <div id="pageBody"><!-- rendered by JS --></div>
@@ -506,6 +550,7 @@ body.ops-mode .sidebar{display:none}
 <script src="models.js"></script>
 <script src="ops.js?v=20260930-lg1"></script>
 <script src="settle.js"></script>
+<script src="intake.js?v=20261002-ik1"></script>
 <script src="drive.js"></script>
 <script>
 /* =========================================================================
@@ -2114,6 +2159,7 @@ function currentIdFromHash(){
   var h = location.hash.replace(/^#\/?/,'');
   if(h.split('/')[0]==='ops') return h;   /* ops.js patch */
   if(h.split('/')[0]==='settle') return h;   /* settle patch */
+  if(h.split('/')[0]==='intake') return h;   /* intake — 운영업무 접수 현황 */
   return h || 'home';
 }
 function navigate(id){
@@ -2122,13 +2168,23 @@ function navigate(id){
 function renderRoute(id){
   /* ops.js patch — 상세 업무 처리 탭 · settle patch — 정산 업무 탭 */
   var head = id.split('/')[0];
-  var isOps = head==='ops', isSettle = head==='settle';
+  var isOps = head==='ops', isSettle = head==='settle', isIntake = head==='intake';
   document.body.classList.toggle('ops-mode', isOps);
   document.body.classList.toggle('settle-mode', isSettle);
-  var cur = isOps ? 'ops' : (isSettle ? 'settle' : 'manual');
+  document.body.classList.toggle('intake-mode', isIntake);
+  var cur = isOps ? 'ops' : (isSettle ? 'settle' : (isIntake ? 'intake' : 'manual'));
   document.querySelectorAll('#tabbar button').forEach(function(b){
     b.classList.toggle('on', b.getAttribute('data-tab')===cur);
   });
+  if(isIntake){
+    document.getElementById('pageBody').innerHTML = renderIntake();
+    initIntake();
+    document.getElementById('content').scrollTop = 0;
+    window.scrollTo(0,0);
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('scrim').classList.remove('open');
+    return;
+  }
   if(isSettle){
     document.getElementById('pageBody').innerHTML = renderSettle();
     document.getElementById('content').scrollTop = 0;
