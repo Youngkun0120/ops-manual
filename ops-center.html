@@ -474,16 +474,89 @@ window.OPS_CONTACTS = {
   };
 
   /* ---------- Claude 결과(JSON) 읽기 ---------- */
-  K.extractJSON = function (text) {
-    var t = String(text || '').trim();
-    if (!t) throw new Error('붙여넣은 내용이 없습니다.');
-    var fence = t.match(/```(?:json)?\s*([\s\S]*?)```/i);
-    if (fence) t = fence[1].trim();
-    var s = t.search(/[\[{]/);
-    if (s < 0) throw new Error('JSON 블록을 찾지 못했습니다. Claude 답변의 ```json … ``` 부분을 통째로 붙여넣으세요.');
-    var open = t[s], close = open === '[' ? ']' : '}', e = t.lastIndexOf(close);
-    try { return JSON.parse(t.slice(s, e + 1)); }
-    catch (err) { throw new Error('JSON 형식이 깨져 있습니다 (' + err.message + '). 답변을 빠짐없이 붙여넣었는지 확인하세요.'); }
+  function jsonCandidates(text) {
+    var out = [], t = String(text || ''), m, re = /```(?:json)?\s*([\s\S]*?)```/gi;
+    while ((m = re.exec(t))) out.push(m[1]);
+    for (var i = 0; i < t.length; i++) {              /* 코드블록 밖에 그냥 쓴 경우 — 괄호 짝을 세어 뽑는다 */
+      var o = t[i]; if (o !== '{' && o !== '[') continue;
+      var close = o === '{' ? '}' : ']', depth = 0, inStr = false, esc = false;
+      for (var j = i; j < t.length; j++) {
+        var ch = t[j];
+        if (inStr) { if (esc) esc = false; else if (ch === '\\') esc = true; else if (ch === '"') inStr = false; continue; }
+        if (ch === '"') inStr = true;
+        else if (ch === o) depth++;
+        else if (ch === close && --depth === 0) { out.push(t.slice(i, j + 1)); i = j; break; }
+      }
+    }
+    return out;
+  }
+  function repairJSON(s) {
+    s = String(s).replace(/[\u201c\u201d\u2033]/g, '"').replace(/[\u2018\u2019]/g, "'")   /* 스마트 따옴표 */
+      .replace(/,\s*([}\]])/g, '$1');                                           /* 끝 쉼표 */
+    var out = '', inStr = false, esc = false;                                   /* 문자열 안 생줄바꿈 → \n */
+    for (var i = 0; i < s.length; i++) {
+      var c = s[i];
+      if (inStr) {
+        if (esc) { out += c; esc = false; continue; }
+        if (c === '\\') { out += c; esc = true; continue; }
+        if (c === '"') { inStr = false; out += c; continue; }
+        if (c === '\n') { out += '\\n'; continue; }
+        if (c === '\r') continue;
+        if (c === '\t') { out += '\\t'; continue; }
+        out += c; continue;
+      }
+      if (c === '"') inStr = true;
+      out += c;
+    }
+    return out;
+  }
+  K.extractJSON = function (text, want) {
+    if (!String(text || '').trim()) throw new Error('붙여넣은 내용이 없습니다.');
+    var cands = jsonCandidates(text), last = null, ok = function (v) { return v && (!want || want(v)); };
+    for (var i = 0; i < cands.length; i++) {
+      for (var k = 0; k < 2; k++) {
+        try { var v = JSON.parse(k ? repairJSON(cands[i]) : cands[i]); if (ok(v)) return v; last = last || v; }
+        catch (err) { last = last || null; }
+      }
+    }
+    if (last) return last;
+    if (!cands.length) throw new Error('JSON 블록을 찾지 못했습니다 — Claude 답변 끝의 ```json … ``` 을 통째로 붙여넣으세요. 답변에 아예 없으면 아래 문장으로 다시 요청하세요.');
+    throw new Error('JSON 형식이 깨져 있습니다 — 답변을 중간에서 자르지 말고 블록 전체를 붙여넣으세요.');
+  };
+  /* 답변에 표만 있을 때 — 마크다운 표(| … |)나 탭으로 붙인 표를 회차 행으로 읽는다. */
+  var TH = [['date', /발송\s*일|날짜/], ['time', /시간/], ['target', /타겟|대상/], ['count', /건수|모수/],
+            ['title', /타이틀|제목|상단/], ['body', /본문|문구|하단/], ['optout', /수신\s*거부/],
+            ['landing', /랜딩|url|링크/i], ['ctr', /ctr|클릭률/i], ['basis', /근거/]];
+  K.rowsFromTable = function (text) {
+    var lines = String(text || '').split('\n').map(function (x) { return x.trim(); })
+      .filter(function (x) { return (x.indexOf('|') >= 0 || x.indexOf('\t') >= 0) && !/^\|?[\s|:-]+\|?$/.test(x); });
+    var split = function (x) { return x.replace(/^\||\|$/g, '').split(/\s*\|\s*|\t/).map(function (c) { return c.trim(); }); };
+    if (lines.length < 2) throw new Error('표를 찾지 못했습니다.');
+    var head = split(lines[0]), map = head.map(function (h) {
+      var hit = TH.filter(function (t) { return t[1].test(h); })[0]; return hit ? hit[0] : null;
+    });
+    if (map.filter(Boolean).length < 3 || map.indexOf('date') < 0) throw new Error('표의 머리글에서 발송일·문구 칸을 찾지 못했습니다.');
+    var rows = lines.slice(1).map(function (ln) {
+      var c = split(ln), r = {};
+      map.forEach(function (k, i) { if (k && c[i]) r[k] = c[i].replace(/<br\s*\/?>/gi, '\n'); });
+      return r;
+    }).filter(function (r) { return r.date && (r.body || r.title); });
+    if (!rows.length) throw new Error('표에서 회차를 읽지 못했습니다.');
+    return { rows: rows, _fromTable: true };
+  };
+  /* 실패했을 때 띄우는 안내 — Claude 에 다시 요청할 문장을 그대로 복사한다. */
+  K.RETRY_JSON = '방금 만든 발송계획을 실행 센터용 JSON 블록으로만 다시 줘. 설명 없이 ```json 코드블록 하나만, 회차 1행 = 1객체로.\n' +
+    '{"telco":"KT","service":"서비스명","month":"YYYY-MM","rows":[{"date":"YYYY-MM-DD","time":"","title":"","body":"","optout":"","target":"","count":"","landing":"","ctr":"","basis":""}]}\n' +
+    '줄바꿈은 \\n 으로 쓰고, 값 안에 따옴표는 넣지 마.';
+  K.rescueBox = function () {
+    var id = 'rt' + Math.random().toString(36).slice(2, 8);
+    setTimeout(function () {
+      var el = document.getElementById(id);
+      if (el) el.addEventListener('click', function (e) { K.copy(K.RETRY_JSON, e.currentTarget); });
+    }, 0);
+    return '<div class="note"><b>JSON 없이 답변이 온 경우</b><div style="margin:6px 0">아래 문장을 복사해 같은 채팅에 그대로 보내면 JSON만 다시 받습니다. ' +
+      '또는 답변의 <b>표</b>(발송일 · 문구 열이 있는)를 그대로 복사해 위 칸에 붙여넣어도 읽습니다.</div>' +
+      '<button class="btn small" type="button" id="' + id + '">JSON 다시 요청 문장 복사</button></div>';
   };
 
   /* ---------- 문구 점검 ---------- */
@@ -1011,7 +1084,7 @@ window.OPS_CONTACTS = {
           '- 금액은 소개서 단가표 숫자만. 이모티콘·과장·단정·의학적 효능 단정 금지.\n' +
           '- 예상 CTR은 같은 통신사·같은 소구 축·유효 구간 유사 문구 3건 이상 평균을 중심으로 범위로, 근거 4줄 내외(실측 기반). 3건 미만이면 중앙값 + 「표본 부족」.\n' +
           '- 직전 달 계획서를 첨부했으면 그 양식 그대로 엑셀을 만들어 다운로드로 줘.\n' +
-          '- 마지막에 실행 센터용 JSON 블록을 붙여줘 (회차 1행 = 1객체):\n' +
+          '- 답변 맨 끝에 실행 센터용 JSON 블록을 반드시 붙여줘 — 엑셀을 만들어 줬더라도 생략하지 말고, ```json 코드블록 하나로, 회차 1행 = 1객체. 값 안 줄바꿈은 \\n 으로:\n' +
           '```json\n{"telco":"' + c.telco + '","service":"' + c.service + '","month":"' + v.month + '","rows":[{"date":"' + v.month + '-05","time":"16:00~17:00","title":"(광고) 타이틀","body":"본문","optout":"수신거부 문구","target":"40대 남성","count":"20만","landing":"https://...utm_id=YYMMDD","ctr":"1.55~1.70%","basis":"- 근거1\\n- 근거2"}]}\n```';
       }
     }]
@@ -1829,8 +1902,14 @@ window.OPS_CONTACTS = {
 
     function tel() { return (data && data.telco) || K.ctx.telco; }
     function read() {
-      try { data = K.extractJSON($('[data-j]', b).value); } catch (e) { $('[data-r]', b).innerHTML = note('danger', esc(e.message)); return; }
+      var raw = $('[data-j]', b).value;
+      try { data = K.extractJSON(raw, function (v) { return v && Array.isArray(v.rows) && v.rows.length; }); }
+      catch (e) {
+        try { data = K.rowsFromTable(raw); K.toast('JSON 대신 표를 읽었습니다 — 값이 맞는지 보고 진행하세요.', 4500); }
+        catch (e2) { $('[data-r]', b).innerHTML = note('danger', esc(e.message)) + K.rescueBox(); return; }
+      }
       var rows = data.rows || [], lim = K.num(api.v().limit), issues = [];
+      if (data._fromTable) issues.push('JSON 대신 표에서 읽었습니다 — 표에 없던 칸(수신거부 · 랜딩 URL · 건수 등)은 비어 있으니 엑셀을 받기 전에 확인하세요');
       if (data.telco && data.telco !== K.ctx.telco) issues.push('JSON 통신사(' + data.telco + ')와 선택한 통신사(' + K.ctx.telco + ')가 다릅니다 — JSON 기준으로 만듭니다');
       rows.forEach(function (r, i) {
         var n = '회차 ' + (i + 1) + ': ', d = K.parseDate(r.date);
