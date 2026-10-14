@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>안심클라우드 GA 월간 보고 지표 뽑는 법</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* 레이아웃: 한 줄 기둥 — 한눈 요약 → 순서(1~6) → 값 대응표 → 자주 틀리는 곳 → 8·9월 확인값 */
+:root{
+  --bg:#f3f5f4; --surface:#ffffff; --ink:#18221f; --muted:#56635e; --faint:#8a958f; --line:#d9e0dc;
+  --accent:#1a6b52; --accent-soft:#e2f1ea; --warn:#a4540c; --warn-soft:#fbefe0; --risk:#ad3a2a; --risk-soft:#f9e5e1;
+  --code-bg:#eef2f0;
+  --body:"IBM Plex Sans KR",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121816; --surface:#1a211e; --ink:#e5ebe8; --muted:#a4b0aa; --faint:#75817b; --line:#2c3632;
+  --accent:#5ec9a4; --accent-soft:#163029; --warn:#e3a35a; --warn-soft:#33281b; --risk:#ea8a7a; --risk-soft:#3a221e; --code-bg:#222b27; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121816; --surface:#1a211e; --ink:#e5ebe8; --muted:#a4b0aa; --faint:#75817b; --line:#2c3632;
+  --accent:#5ec9a4; --accent-soft:#163029; --warn:#e3a35a; --warn-soft:#33281b; --risk:#ea8a7a; --risk-soft:#3a221e; --code-bg:#222b27; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.7;margin:0}
+.wrap{max-width:820px;margin:0 auto;padding-inline:16px;padding-block:40px 64px;display:grid;gap:32px}
+h1,h2,h3{margin:0;line-height:1.3;text-wrap:balance}
+h1{font-size:clamp(23px,4vw,30px);font-weight:700}
+h2{font-size:19px;font-weight:700}
+h3{font-size:15.5px;font-weight:700}
+p{margin:0}
+.meta{font-size:13px;color:var(--muted)}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.08em;color:var(--accent)}
+section{display:grid;gap:12px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px 20px;display:grid;gap:10px;min-width:0}
+code,.path{font-family:var(--mono);font-size:13px;background:var(--code-bg);padding:1px 6px;border-radius:5px;white-space:nowrap}
+.ui{font-weight:600;color:var(--accent)}
+.steps{list-style:none;margin:0;padding:0;display:grid;gap:12px;counter-reset:s}
+.steps>li{display:grid;grid-template-columns:34px 1fr;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;min-width:0}
+.steps>li::before{counter-increment:s;content:counter(s);font-family:var(--mono);font-weight:600;font-size:15px;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent)}
+.steps>li>div{display:grid;gap:6px;min-width:0}
+.steps ul{margin:2px 0 0;padding-left:18px;display:grid;gap:2px}
+.warn{border-left:3px solid var(--warn);background:var(--warn-soft);padding:10px 14px;border-radius:0 8px 8px 0;font-size:14px}
+.risk{border-left:3px solid var(--risk);background:var(--risk-soft);padding:12px 16px;border-radius:0 8px 8px 0;font-size:14.5px;display:grid;gap:6px}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-size:12.5px;color:var(--muted);font-weight:600}
+td.n{text-align:right;font-family:var(--mono);font-size:13px;white-space:nowrap}
+th.n{text-align:right}
+.mock{border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:13px}
+.mock .bar{display:flex;gap:0;background:var(--code-bg);border-bottom:1px solid var(--line)}
+.mock .bar span{padding:8px 10px;border-right:1px solid var(--line);white-space:nowrap}
+.mock .bar span.hit{background:var(--accent-soft);color:var(--accent);font-weight:700}
+.mock .bar span.bad{background:var(--risk-soft);color:var(--risk);text-decoration:line-through}
+.mock .row{display:flex;gap:0}
+.mock .row span{padding:8px 10px;border-right:1px solid var(--line);white-space:nowrap;font-family:var(--mono)}
+footer{font-size:12.5px;color:var(--faint);border-top:1px solid var(--line);padding-top:14px}
+@media (max-width:600px){.steps>li{grid-template-columns:1fr}.steps>li::before{margin-bottom:-4px}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+<header style="display:grid;gap:8px">
+  <span class="eyebrow">PASS 안심클라우드 · LG U+ 월간 보고</span>
+  <h1>GA에서 화면별 월간 지표 뽑는 법</h1>
+  <p class="meta">대상: LG U+ 월간 보고서 「화면별 세션 수 · UV · 체류시간」 표를 채우는 담당자 · GA4 속성 PASS_Cloud · 2026년 10월 작성</p>
+</header>
+
+<section class="risk" aria-label="가장 중요한 한 가지">
+  <strong>가장 많이 틀리는 곳 — 표의 첫 열</strong>
+  <p>「페이지 및 화면」 보고서 표의 첫 열 제목이 <strong>「페이지 경로 및 화면 클래스」</strong>인지 꼭 확인하세요. 「방문 페이지」나 「페이지 제목 및 화면 클래스」로 되어 있으면 맨 위 합계만 맞고 화면별 숫자는 모두 달라집니다.</p>
+  <p class="meta">예) 8월 <code>/view/home</code> — 페이지 경로 기준 조회수 129,252 · 활성 사용자 89,577 / 방문 페이지 기준 135,169 · 50,056</p>
+</section>
+
+<section aria-labelledby="s1">
+  <h2 id="s1">순서</h2>
+  <ol class="steps">
+    <li><div>
+      <strong>GA를 오션블루 구글 계정으로 연다</strong>
+      <p>analytics.google.com 에서 오른쪽 위 계정을 <code>dev@oceanbleu.co.kr</code>(또는 PASS_Cloud 권한이 있는 계정)로 바꾸고, 왼쪽 위 속성 선택에서 <span class="ui">PASS_Cloud</span>를 고릅니다.</p>
+      <p class="meta">주소의 <code>authuser=숫자</code>는 사람마다 다릅니다(브라우저에 로그인한 계정 순서). 다른 사람이 보낸 링크가 다른 계정으로 열리면 계정만 바꿔 주세요.</p>
+    </div></li>
+    <li><div>
+      <strong>보고서를 연다</strong>
+      <p>왼쪽 메뉴 <span class="ui">보고서</span> → <span class="ui">참여도</span> → <span class="ui">페이지 및 화면</span></p>
+    </div></li>
+    <li><div>
+      <strong>기간을 맞춘다</strong>
+      <p>오른쪽 위 날짜를 눌러 <span class="ui">맞춤</span> → 보고할 달의 1일~말일(예: 8월 1일~8월 31일) → <span class="ui">적용</span></p>
+    </div></li>
+    <li><div>
+      <strong>표 첫 열을 「페이지 경로 및 화면 클래스」로 바꾼다</strong>
+      <p>표 맨 왼쪽 열 제목 옆 <span class="ui">▼</span>를 눌러 <span class="ui">페이지 경로 및 화면 클래스</span>를 고릅니다. 열 제목에 경로가 <code>/view/home</code>처럼 보이면 맞습니다.</p>
+      <div class="mock" role="img" aria-label="표 첫 열 제목 예시">
+        <div class="bar"><span class="hit">페이지 경로 및 화면 클래스 ▼</span><span>조회수</span><span>활성 사용자</span><span>활성 사용자당 평균 참여 시간</span></div>
+        <div class="bar"><span class="bad">방문 페이지</span><span class="bad">페이지 제목 및 화면 클래스</span><span style="border:0">← 이 두 가지는 쓰지 않음</span></div>
+      </div>
+    </div></li>
+    <li><div>
+      <strong>합계 행에서 「메인화면」 값을 읽는다</strong>
+      <p>표 맨 위 <span class="ui">합계</span> 행의 <span class="ui">조회수</span> · <span class="ui">활성 사용자</span> · <span class="ui">활성 사용자당 평균 참여 시간</span>을 옮겨 적습니다(서비스 전체).</p>
+    </div></li>
+    <li><div>
+      <strong>검색창에 경로를 넣어 나머지 세 화면을 읽는다</strong>
+      <p>표 위 <span class="ui">검색</span>에 아래 경로를 하나씩 넣고, <strong>경로가 정확히 같은 행</strong>의 세 값을 옮겨 적습니다.</p>
+      <ul>
+        <li>안심클라우드 → <code>/view/home</code></li>
+        <li>공유기능 → <code>/view/cloud/passupload</code></li>
+        <li>통합클라우드 → <code>/view/cloud/webhard</code></li>
+      </ul>
+      <p class="meta">검색은 "포함" 검색이라 비슷한 경로(예: <code>/view/homepage</code>)가 함께 나옵니다. 정확히 같은 경로 한 줄만 씁니다.</p>
+    </div></li>
+  </ol>
+</section>
+
+<section aria-labelledby="s2">
+  <h2 id="s2">GA 값 → 보고서 칸 대응</h2>
+  <div class="panel tw">
+    <table>
+      <thead><tr><th>보고서 칸</th><th>GA 표에서 읽는 값</th><th>계산</th></tr></thead>
+      <tbody>
+        <tr><td>세션 수(전체)</td><td><span class="ui">조회수</span></td><td>그대로 (GA의 「세션수」 열이 아님)</td></tr>
+        <tr><td>UV(전체)</td><td><span class="ui">활성 사용자</span></td><td>그대로</td></tr>
+        <tr><td>세션 수(평균)</td><td>조회수</td><td>÷ 그달 일수 (8월 31 · 9월 30)</td></tr>
+        <tr><td>UV(평균)</td><td>활성 사용자</td><td>÷ 그달 일수</td></tr>
+        <tr><td>체류시간(평균)</td><td><span class="ui">활성 사용자당 평균 참여 시간</span></td><td>초로 바꿔 적음 (「5초」→ 5, 「1분 06초」→ 66)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="panel tw">
+    <table>
+      <thead><tr><th>보고서 화면명</th><th>읽는 곳</th><th>실제 화면</th></tr></thead>
+      <tbody>
+        <tr><td>메인화면</td><td>표 맨 위 <span class="ui">합계</span> 행</td><td>서비스 전체 (무료 가입 안내 화면 포함)</td></tr>
+        <tr><td>안심클라우드</td><td><code>/view/home</code></td><td>클라우드 홈</td></tr>
+        <tr><td>공유기능</td><td><code>/view/cloud/passupload</code></td><td>PASS에서 저장 (업로드 위치 선택)</td></tr>
+        <tr><td>통합클라우드</td><td><code>/view/cloud/webhard</code></td><td>전체 파일함 (웹하드)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section aria-labelledby="s3">
+  <h2 id="s3">자주 틀리는 곳</h2>
+  <div class="panel" style="gap:8px">
+    <p>· <strong>첫 열이 「방문 페이지」</strong> — 그 페이지로 들어와 시작한 세션 기준이라 화면별 숫자가 다릅니다. 4번 단계로 바꿉니다.</p>
+    <p>· <strong>「세션수」 열을 옮김</strong> — 보고서의 「세션 수」 칸은 GA의 <span class="ui">조회수</span>입니다.</p>
+    <p>· <strong>평균을 30일로 고정</strong> — 31일인 달(8월 등)은 31로 나눕니다. 8월 원래 표는 메인화면만 31, 나머지는 30으로 나눠 맞지 않았습니다.</p>
+    <p>· <strong>UV를 더함</strong> — 같은 사람이 여러 화면을 보므로 화면별 활성 사용자를 더하면 중복됩니다. 전체 UV는 합계 행 값을 씁니다.</p>
+    <p>· <strong>계정·속성이 다름</strong> — 와이즈 계정이나 다른 속성(헬스케어 등)으로 열려 있지 않은지 왼쪽 위 속성 이름이 <span class="ui">PASS_Cloud</span>인지 봅니다.</p>
+  </div>
+  <div class="warn">UV(평균)은 「월 활성 사용자 ÷ 일수」입니다. 날마다 사용자 수를 평균 낸 「일평균 사용자」와는 다릅니다(8월 서비스 전체 12,933 vs 13,419). 보고서 정의를 바꿀 때까지는 기존 방식대로 씁니다.</div>
+</section>
+
+<section aria-labelledby="s4">
+  <h2 id="s4">확인용 값 (8·9월)</h2>
+  <p class="meta">순서대로 뽑았을 때 아래와 같으면 맞게 본 것입니다.</p>
+  <div class="panel tw">
+    <table>
+      <thead><tr><th>화면명</th><th class="n">8월 조회수</th><th class="n">8월 활성 사용자</th><th class="n">8월 체류</th><th class="n">9월 조회수</th><th class="n">9월 활성 사용자</th><th class="n">9월 체류</th></tr></thead>
+      <tbody>
+        <tr><td>메인화면 (합계)</td><td class="n">681,245</td><td class="n">400,931</td><td class="n">5초</td><td class="n">674,802</td><td class="n">376,169</td><td class="n">5초</td></tr>
+        <tr><td>안심클라우드 <code>/view/home</code></td><td class="n">129,252</td><td class="n">89,577</td><td class="n">3초</td><td class="n">126,432</td><td class="n">88,133</td><td class="n">2초</td></tr>
+        <tr><td>공유기능 <code>/view/cloud/passupload</code></td><td class="n">127,979</td><td class="n">104,085</td><td class="n">2초</td><td class="n">133,302</td><td class="n">111,893</td><td class="n">2초</td></tr>
+        <tr><td>통합클라우드 <code>/view/cloud/webhard</code></td><td class="n">80,103</td><td class="n">50,633</td><td class="n">9초</td><td class="n">107,918</td><td class="n">75,331</td><td class="n">9초</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="meta">체류시간은 GA 표에 소수점 없이 「n초」로 나옵니다. 정리 엑셀: 안심클라우드_LGU보고지표_8-9월_A기준.xlsx (평균 · 합계는 수식으로 계산)</p>
+</section>
+
+<footer>원천: GA4 PASS_Cloud(속성 ID 535290657) › 보고서 › 참여도 › 페이지 및 화면 · 서비스기획팀</footer>
+</div>
+</body>
+</html>
